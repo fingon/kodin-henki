@@ -31,7 +31,7 @@ Requirements
 
 * For Philips Hue support, phue (optional) 
 * TBD - Belkin WeMo backend 
-* tox (optional, for unit testing)
+* tox (optional, for unit testing; will pull py.test and run things inside virtualenv)
 
 
 Design
