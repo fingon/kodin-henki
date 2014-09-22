@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:53:31 2014 mstenber
-# Last modified: Mon Sep 22 17:02:33 2014 mstenber
-# Edit time:     25 min
+# Last modified: Mon Sep 22 17:28:14 2014 mstenber
+# Edit time:     26 min
 #
 """
 
@@ -99,4 +99,11 @@ def test_signal():
     s.disconnect(m2)
     s()
     assert m1.called and not m2.called
+
+def test_singleton_factory():
+    db = kodinhenki.db.Database()
+    f = kodinhenki.db.singleton_object_factory('x', kodinhenki.db.Object)
+    o1 = f(db)
+    o2 = f(db)
+    assert o1 is o2
 

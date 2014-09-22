@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Mon Sep 22 17:05:59 2014 mstenber
-# Edit time:     31 min
+# Last modified: Mon Sep 22 17:27:48 2014 mstenber
+# Edit time:     32 min
 #
 """
 
@@ -88,6 +88,14 @@ class Database:
         assert o._db is self
         del o._db
         Object.removed(o=o)
+
+def singleton_object_factory(name, cls):
+    def _f(db, *args, **kwargs):
+        if db.exists(name): return db.get(name)
+        o = cls(name=name, *args, **kwargs)
+        db.add_object(o)
+        return o
+    return _f
 
 _db = None
 
