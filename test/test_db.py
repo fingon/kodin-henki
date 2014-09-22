@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:53:31 2014 mstenber
-# Last modified: Mon Sep 22 17:28:14 2014 mstenber
+# Last modified: Mon Sep 22 19:04:45 2014 mstenber
 # Edit time:     26 min
 #
 """
@@ -85,20 +85,6 @@ def test_o():
     kodinhenki.Object.added.disconnect(ma)
     kodinhenki.Object.removed.disconnect(mr)
     kodinhenki.Object.changed.disconnect(mc)
-
-def test_signal():
-    s = kodinhenki.db.Signal()
-    m1 = Mock()
-    m2 = Mock()
-    s.connect(m1)
-    s.connect(m2)
-    s()
-    assert m1.called and m2.called
-    m1.reset_mock()
-    m2.reset_mock()
-    s.disconnect(m2)
-    s()
-    assert m1.called and not m2.called
 
 def test_singleton_factory():
     db = kodinhenki.db.Database()

@@ -9,33 +9,28 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Mon Sep 22 17:27:48 2014 mstenber
-# Edit time:     32 min
+# Last modified: Mon Sep 22 19:09:09 2014 mstenber
+# Edit time:     45 min
 #
 """
 
-(Named, eventful object) database
+(Named, eventful object) database.
+
+Note: This is intentionally very singlethreaded design, despite being
+usable in multithreaded app too. In multithreaded app, some sort of
+message queue abstraction should be used (e.g. pipe all signals
+somewhere safe). The overhead of adding spurious locking also for
+singlethreaded case does not seem very useful.
 
 """
 
 import datetime
-
-class Signal:
-    def __init__(self):
-        self._listeners = []
-    def connect(self, callback, filter=None):
-        self._listeners.append((callback, filter))
-    def __call__(self, **kwargs):
-        for fun, filter in self._listeners:
-            if not filter or filter(kwargs):
-                fun(**kwargs)
-    def disconnect(self, callback, filter=None):
-        self._listeners.remove((callback, filter))
+from kodinhenki.compat import *
 
 class Object:
-    added = Signal()
-    removed = Signal()
-    changed = Signal()
+    added = kodinhenki.util.Signal()
+    removed = kodinhenki.util.Signal()
+    changed = kodinhenki.util.Signal()
     def __init__(self, name=None, **state):
         if state:
             now = datetime.datetime.now()
@@ -54,20 +49,22 @@ class Object:
         return self._state[key][1]
     def get_database(self):
         return self._db
-    def set(self, key, value):
+    def set(self, key, value, by=None):
         # Spurious set
         ost = self._state.get(key, None)
         if ost and ost[0] == value:
             return
         now = datetime.datetime.now()
-        st = [value, now]
+        st = [value, now, by]
         self._state[key] = st
         ov = ost and ost[0]
-        Object.changed(o=self, key=key, old=ov, new=value)
+        Object.changed(o=self, key=key, old=ov, new=value, by=by)
 
 class Database:
-    def __init__(self):
+    def __init__(self, single_threaded=False):
         self._objects = {}
+        self.single_threaded = single_threaded
+        self._queue = Queue.Queue()
     def add(self, name, **kwargs):
         o = Object(name=name, **kwargs)
         self.add_object(o)
@@ -88,6 +85,16 @@ class Database:
         assert o._db is self
         del o._db
         Object.removed(o=o)
+    def queue_update(self, f):
+        self._queue.put(f)
+    def run_updates(self):
+        while True:
+            try:
+                f = self._queue.get_nowait()
+            except:
+                return
+            f()
+
 
 def singleton_object_factory(name, cls):
     def _f(db, *args, **kwargs):

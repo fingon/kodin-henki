@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 16:19:15 2014 mstenber
-# Last modified: Mon Sep 22 17:25:09 2014 mstenber
-# Edit time:     20 min
+# Last modified: Mon Sep 22 19:01:25 2014 mstenber
+# Edit time:     21 min
 #
 """
 
@@ -46,6 +46,12 @@ def test_hue():
     assert db
     h = kodinhenki.hue.get(db, ip='1.2.3.4')
     assert h
+
+    # Run update by hand
+    h.update()
+
+    # Also pretend we're multithreaded
+    db.run_updates()
 
     l = list(h.get_lights())
     assert len(l) == 3
