@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 16:19:15 2014 mstenber
-# Last modified: Mon Sep 22 17:00:25 2014 mstenber
+# Last modified: Mon Sep 22 17:10:34 2014 mstenber
 # Edit time:     17 min
 #
 """
@@ -63,4 +63,6 @@ def test_hue():
     assert l[0].get_light_object().on
     l[0].turn_off()
     assert not l[0].get_light_object().on
+
+    assert db.get('hue.lt1')
 
