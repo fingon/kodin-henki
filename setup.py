@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:01:42 2014 mstenber
-# Last modified: Mon Sep 22 15:04:40 2014 mstenber
+# Last modified: Mon Sep 22 16:27:42 2014 mstenber
 # Edit time:     2 min
 #
 """
@@ -27,6 +27,7 @@ setup(name='kodinhenki',
       version='0.0.1', # XXXX
       author = 'Markus Stenberg',
       author_email = 'fingon+kh@iki.fi',
-      packages = ['kodinhenki']
+      packages = ['kodinhenki'],
+      install_requires=['phue']
       )
 

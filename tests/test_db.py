@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:53:31 2014 mstenber
-# Last modified: Mon Sep 22 15:51:08 2014 mstenber
-# Edit time:     20 min
+# Last modified: Mon Sep 22 17:02:33 2014 mstenber
+# Edit time:     25 min
 #
 """
 
@@ -23,10 +23,12 @@ import kodinhenki.db
 
 from mock import Mock
 
+import pytest
+
 def test_base():
-    db1 = kodinhenki.getDatabase()
+    db1 = kodinhenki.get_database()
     assert db1
-    db2 = kodinhenki.getDatabase()
+    db2 = kodinhenki.get_database()
     assert db1 is db2
 
 def test_o():
@@ -36,7 +38,7 @@ def test_o():
     kodinhenki.Object.added.connect(ma)
     kodinhenki.Object.removed.connect(mr)
     kodinhenki.Object.changed.connect(mc)
-    d = kodinhenki.getDatabase()
+    d = kodinhenki.get_database()
     # Should raise exception if no such object found
     try:
         d.get(name='foo')
@@ -53,6 +55,8 @@ def test_o():
     # Make sure change notifications also work
     o = d.get(name='foo')
     assert o
+    assert o.get('key') == 'value'
+
     v = 'v'
     o.set('k', v)
     assert mc.called

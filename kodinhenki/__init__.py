@@ -9,14 +9,14 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:05:48 2014 mstenber
-# Last modified: Mon Sep 22 15:12:02 2014 mstenber
-# Edit time:     4 min
+# Last modified: Mon Sep 22 16:03:54 2014 mstenber
+# Edit time:     5 min
 #
 """
 
 """
 
-from kodinhenki.db import getDatabase, Object
+from kodinhenki.db import get_database, Object
 
 
 
