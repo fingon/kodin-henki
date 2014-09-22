@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Mon Sep 22 15:12:49 2014 mstenber
-# Edit time:     14 min
+# Last modified: Mon Sep 22 15:41:15 2014 mstenber
+# Edit time:     18 min
 #
 """
 
@@ -39,9 +39,7 @@ class Object:
     def __init__(self, name=None, **state):
         self._state = state
         self._name = name
-        Object.added(o=self)
-        if name:
-            self.set('name', name)
+        Object.added(o=self, name=name)
     def __del__(self):
         Object.removed(o=self)
     def get(self, key):
@@ -66,6 +64,13 @@ class Database:
         assert name not in self._objects
         o = Object(name=name, **kwargs)
         self._objects[name] = o
+    def get(self, name):
+        return self._objects[name]
+    def removeObject(self, o):
+        self._objects[o._name] = None
+        Object.removed(o=o)
+    def remove(self, name):
+        self.removeObject(self.get(name))
 
 _db = None
 
