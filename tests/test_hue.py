@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 16:19:15 2014 mstenber
-# Last modified: Mon Sep 22 17:10:34 2014 mstenber
-# Edit time:     17 min
+# Last modified: Mon Sep 22 17:25:09 2014 mstenber
+# Edit time:     20 min
 #
 """
 
@@ -20,8 +20,7 @@ Test code for Hue module
 
 
 from mock import Mock
-from kodinhenki.db import Database
-from kodinhenki.hue import get, HueBulb
+import kodinhenki.db
 import kodinhenki.hue
 
 def test_hue():
@@ -43,14 +42,10 @@ def test_hue():
     b.get_light_objects = Mock(return_value=[l1, l2, l3])
     assert len(b.get_light_objects()) == 3
 
-    db = Database()
-    h = get(db)
+    db = kodinhenki.db.Database()
+    assert db
+    h = kodinhenki.hue.get(db, ip='1.2.3.4')
     assert h
-    assert not h.get_lights()
-    assert not h.get_light_objects()
-
-    h.init('n/a')
-    h.update()
 
     l = list(h.get_lights())
     assert len(l) == 3
@@ -58,7 +53,7 @@ def test_hue():
     l = list(h.get_light_objects())
     assert len(l) >= 3
 
-    assert isinstance(l[0], HueBulb)
+    assert isinstance(l[0], kodinhenki.hue.HueBulb)
     l[0].turn_on()
     assert l[0].get_light_object().on
     l[0].turn_off()
