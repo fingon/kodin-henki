@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Mon Sep 22 17:24:42 2014 mstenber
-# Edit time:     41 min
+# Last modified: Mon Sep 22 17:56:51 2014 mstenber
+# Edit time:     43 min
 #
 """
 
@@ -48,22 +48,18 @@ class HueBulb(kodinhenki.db.Object):
         self.get_parent().maybe_update()
         return self.get('on')
     def turn_on(self):
-        if self.is_on():
-            return
-        lo = self.get_light_object()
-        lo.on = True
-        self.get_parent().mark_dirty()
+        self.set('on', True)
     def turn_off(self):
-        if not self.is_on():
-            return
-        lo = self.get_light_object()
-        lo.on = False
-        self.get_parent().mark_dirty()
-
+        self.set('on', False)
 
 class Hue(kodinhenki.db.Object):
     # How long do we believe in the 'current' timestamp?
+    # (in seconds)
     light_check_interval = 60
+
+    # Do we update automatically on access?
+    immediate_update = True
+
     _lights_dirty_after = 0
     _b = None
     def get_bridge(self):
@@ -78,12 +74,17 @@ class Hue(kodinhenki.db.Object):
         return [self.get_database().get(x) for x in self.get_lights()]
     def mark_dirty(self):
         self._lights_dirty_after = 0
+    def is_dirty(self):
+        if not self._lights_dirty_after:
+            return True
+        return self._lights_dirty_after <= _timestamp()
     def maybe_update(self):
-        if self._lights_dirty_after <= _timestamp():
+        if self.is_dirty() and self.immediate_update:
             self.update()
     def update(self):
         db = self.get_database()
         l = []
+        self._lights_dirty_after = None
         for light in self.get_bridge().get_light_objects():
             #name = unicode(light.name, 'utf-8')
             name = light.name
@@ -98,6 +99,18 @@ class Hue(kodinhenki.db.Object):
         l.sort()
         self.set('lights', l)
         self._lights_dirty_after = _timestamp() + self.light_check_interval
+
+def _bulb_changed(o, key, old, new):
+    if key == 'on' and o.name.startswith(MAIN_NAME):
+        hue = o.get_parent()
+        # In update -> the change of 'on' state actually came from bridge
+        if hue._lights_dirty_after is None:
+            return
+        lo = o.get_light_object()
+        lo.on = new
+        hue.mark_dirty()
+
+kodinhenki.db.Object.changed.connect(_bulb_changed)
 
 get = kodinhenki.db.singleton_object_factory(MAIN_NAME, Hue)
 
