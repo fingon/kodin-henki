@@ -15,23 +15,28 @@ What does it contain?
   things state machine dictates should be done
 * Multi-machine support (client-server, with same API available at both
   ends; clients can be also non-Python)
-* Minimalist sun state calculator
+* ( Minimalist sun state calculator - TBD if this is good idea or if ambient light sensor is desirable )
 
-Code characteristics
-====================
+Code characteristics / goals
+============================
 
-* Support for Python 2.6+ (and perhaps Python 3)
+* Support for Python 2.7+ / Python 3.4+
+
 * Pure Python solution (so that it runs easily e.g. on OpenWrt without
   python-dev or equivalent)
+  
 * Correctness - should be robust. Ensured by reasonable unit test coverage
   (and potentially system tests later on)
+
+* As few external dependencies as possible
 
 Requirements
 ============
 
-* For Philips Hue support, phue (optional) 
-* TBD - Belkin WeMo backend 
-* tox (optional, for unit testing; will pull py.test and run things inside virtualenv)
+* phue (Philips Hue support - pure Python)
+* tzlocal (to get local timezone information)
+* pytz (required by tzlocal)
+* tox (for unit testing; it will pull py.test and run things inside virtualenv)
 
 
 Design
@@ -46,5 +51,8 @@ bothered.
 Non-goals
 =========
 
-* 'efficiency'
+* 'efficiency' - all I care is fast development, and relative robustness of
+  the final solution.
+  
+  
 
