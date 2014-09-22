@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Mon Sep 22 20:09:08 2014 mstenber
-# Edit time:     73 min
+# Last modified: Mon Sep 22 20:17:00 2014 mstenber
+# Edit time:     75 min
 #
 """
 
@@ -81,11 +81,17 @@ class Hue(kodinhenki.db.Object):
         return [self.get_database().get(x) for x in self.get_lights()]
     def mark_dirty(self):
         self._lights_dirty_after = 0
-    def is_dirty(self):
+    def next_update_in_seconds(self):
+        if self.should_update():
+            return -1
+        return self._lights_dirty_after - _timestamp()
+    def should_update(self):
         if not self._lights_dirty_after:
             return True
         return self._lights_dirty_after <= _timestamp()
     def update(self):
+        if not self.should_update():
+            return
         with self._lock:
             b = self.get_bridge(force=self.dynamically_update_lights)
             lobs = b.get_light_objects()
