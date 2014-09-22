@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Mon Sep 22 19:23:13 2014 mstenber
-# Edit time:     52 min
+# Last modified: Mon Sep 22 19:50:45 2014 mstenber
+# Edit time:     58 min
 #
 """
 
@@ -28,10 +28,6 @@ import datetime
 from kodinhenki.compat import *
 import kodinhenki.util
 import threading
-
-# Debug facility to see errors in thread use; basically, any object
-# add/remove/find will trigger an assertion if done from wrong thread
-THREADING_OK=False
 
 class Object:
     added = kodinhenki.util.Signal()
@@ -70,49 +66,36 @@ class Database:
     def __init__(self):
         self._objects = {}
         self._queue = Queue.Queue()
-        self._thread = threading.current_thread()
+        self._lock = threading.RLock()
     def add(self, name, **kwargs):
         o = Object(name=name, **kwargs)
         self.add_object(o)
     def add_object(self, o):
-        assert THREADING_OK or self._thread is threading.current_thread()
         assert o.name not in self._objects
         self._objects[o.name] = o
         o._db = self
         Object.added(o=o)
     def exists(self, name):
-        assert THREADING_OK or self._thread is threading.current_thread()
         return name in self._objects
     def get(self, name):
-        assert THREADING_OK or self._thread is threading.current_thread()
         return self._objects[name]
     def remove(self, name):
         self.remove_object(self.get(name))
     def remove_object(self, o):
-        assert THREADING_OK or self._thread is threading.current_thread()
         assert o.name in self._objects
         del self._objects[o.name]
         assert o._db is self
         del o._db
         Object.removed(o=o)
-    def queue_update(self, f):
-        self._queue.put(f)
-    def run_updates(self):
-        assert THREADING_OK or self._thread is threading.current_thread()
-        while True:
-            try:
-                f = self._queue.get_nowait()
-            except:
-                return
-            f()
 
 
 def singleton_object_factory(name, cls):
     def _f(db, *args, **kwargs):
-        if db.exists(name): return db.get(name)
-        o = cls(name=name, *args, **kwargs)
-        db.add_object(o)
-        return o
+        with db._lock:
+            if db.exists(name): return db.get(name)
+            o = cls(name=name, *args, **kwargs)
+            db.add_object(o)
+            return o
     return _f
 
 _db = None
