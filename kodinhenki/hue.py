@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Mon Sep 22 19:58:38 2014 mstenber
-# Edit time:     65 min
+# Last modified: Mon Sep 22 20:09:08 2014 mstenber
+# Edit time:     73 min
 #
 """
 
@@ -59,15 +59,19 @@ class Hue(kodinhenki.db.Object):
     # (in seconds)
     light_check_interval = 60
 
+    # Update set of available lights dynamically (if not,
+    # no need to re-create bridge object every now and then)
+    dynamically_update_lights = False
+
     _lights_dirty_after = 0
     _b = None
 
     # per-CLASS lock - but who cares, there should be only one instance
     _lock = threading.RLock()
 
-    def get_bridge(self):
+    def get_bridge(self, force=False):
         with self._lock:
-            if not self._b:
+            if not self._b or force:
                 self._b = phue.Bridge(self.get('ip'))
             return self._b
     # Lights are stored not as objects, but as names
@@ -83,7 +87,8 @@ class Hue(kodinhenki.db.Object):
         return self._lights_dirty_after <= _timestamp()
     def update(self):
         with self._lock:
-            lobs = self.get_bridge().get_light_objects()
+            b = self.get_bridge(force=self.dynamically_update_lights)
+            lobs = b.get_light_objects()
         db = self.get_database()
         with db._lock:
             l = []
