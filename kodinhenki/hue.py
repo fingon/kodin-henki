@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Mon Sep 22 20:17:00 2014 mstenber
-# Edit time:     75 min
+# Last modified: Tue Sep 23 13:44:25 2014 mstenber
+# Edit time:     78 min
 #
 """
 
@@ -29,9 +29,6 @@ import kodinhenki.db
 import phue
 import time
 import threading
-
-def _timestamp():
-    return time.time()
 
 class HueBulb(kodinhenki.db.Object):
     def get_parent(self):
@@ -84,11 +81,11 @@ class Hue(kodinhenki.db.Object):
     def next_update_in_seconds(self):
         if self.should_update():
             return -1
-        return self._lights_dirty_after - _timestamp()
+        return self._lights_dirty_after - time.time()
     def should_update(self):
         if not self._lights_dirty_after:
             return True
-        return self._lights_dirty_after <= _timestamp()
+        return self._lights_dirty_after <= time.time()
     def update(self):
         if not self.should_update():
             return
@@ -111,18 +108,19 @@ class Hue(kodinhenki.db.Object):
                 l.append(n)
             l.sort()
             self.set('lights', l, by='bridge')
-        self._lights_dirty_after = _timestamp() + self.light_check_interval
+        self._lights_dirty_after = time.time() + self.light_check_interval
 
-def _bulb_changed(o, key, by, old, new):
-    if key == 'on' and by != 'bridge' and o.name.startswith(MAIN_NAME):
-        with o.get_database()._lock:
-            hue = o.get_parent()
-            with hue._lock:
-                lo = o.get_light_object()
-                lo.on = new
-                hue.mark_dirty()
+def _db_bulb_changed(o, key, by, old, new):
+    if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
+        return
+    with o.get_database()._lock:
+        hue = o.get_parent()
+        with hue._lock:
+            lo = o.get_light_object()
+            lo.on = new
+            hue.mark_dirty()
 
-kodinhenki.db.Object.changed.connect(_bulb_changed)
+kodinhenki.db.Object.changed.connect(_db_bulb_changed)
 
 get = kodinhenki.db.singleton_object_factory(MAIN_NAME, Hue)
 

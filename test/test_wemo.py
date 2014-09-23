@@ -9,25 +9,30 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Tue Sep 23 12:51:08 2014 mstenber
-# Edit time:     13 min
+# Last modified: Tue Sep 23 14:05:24 2014 mstenber
+# Edit time:     24 min
 #
 """
 
 """
 
+import kodinhenki
+import kodinhenki.wemo as wemo
 import kodinhenki.wemo.discover as discover
 from mock import Mock
 import threading
 import time
 import logging
 
-def test_discover(caplog):
+def test_wemo(caplog):
     if caplog: caplog.setLevel(logging.DEBUG)
+    db = kodinhenki.get_database()
+    w = wemo.get(db)
     s = threading.Semaphore(0)
     device_seen = Mock()
     discover.device_seen.connect(device_seen)
-    def _foo(**kwargs):
+    def _foo(address, url, **kwargs):
+        #print(urlopen(url).read())
         s.release()
     discover.device_seen.connect(_foo)
     o = discover.start()
