@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 19:06:38 2014 mstenber
-# Last modified: Tue Sep 23 11:56:24 2014 mstenber
+# Last modified: Tue Sep 23 13:34:42 2014 mstenber
 # Edit time:     3 min
 #
 """
@@ -30,4 +30,10 @@ try:
     import SocketServer
 except ImportError:
     import socketserver as SocketServer
+
+try:
+    # 2.x-ism
+    from urllib2 import urlopen, Request
+except ImportError:
+    from urllib.request import urlopen, Request
 
