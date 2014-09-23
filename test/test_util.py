@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 19:04:40 2014 mstenber
-# Last modified: Mon Sep 22 19:05:28 2014 mstenber
-# Edit time:     1 min
+# Last modified: Tue Sep 23 11:53:09 2014 mstenber
+# Edit time:     2 min
 #
 """
 
@@ -34,4 +34,8 @@ def test_signal():
     s.disconnect(m2)
     s()
     assert m1.called and not m2.called
+
+def test_get_ip_address():
+    a4 = kodinhenki.util.get_ipv4_address()
+    a6 = kodinhenki.util.get_ipv6_address()
 
