@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:45:37 2014 mstenber
-# Last modified: Tue Sep 23 13:05:09 2014 mstenber
-# Edit time:     46 min
+# Last modified: Tue Sep 23 13:08:30 2014 mstenber
+# Edit time:     47 min
 #
 """
 
@@ -74,7 +74,7 @@ class DiscoveryHandler(SocketServer.BaseRequestHandler):
             ua = h.get('x-user-agent', None)
             loc = h.get('location', None)
             if ua == 'redsonic' and loc:
-                device_seen(address=client_address, location=loc)
+                device_seen(address=client_address, location=loc, headers=h)
 
 class DiscoveryServiceThread(threading.Thread):
     def __init__(self, port):
