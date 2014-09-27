@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:45:37 2014 mstenber
-# Last modified: Tue Sep 23 13:21:23 2014 mstenber
+# Last modified: Sat Sep 27 18:45:06 2014 mstenber
 # Edit time:     48 min
 #
 """
@@ -26,7 +26,9 @@ handled in threadsafe fashion are out of scope of this module.
 import socket
 import threading
 
-from kodinhenki.compat import *
+import kodinhenki.compat as compat
+socketserver = compat.get_socketserver()
+
 from kodinhenki.util import Signal
 import kodinhenki.util
 
@@ -63,7 +65,7 @@ def parse_http_header(data):
     items = [(x.strip().lower(), y.strip()) for x, y in items]
     return dict(items)
 
-class DiscoveryHandler(SocketServer.BaseRequestHandler):
+class DiscoveryHandler(socketserver.BaseRequestHandler):
     def handle(self):
         _debug('DiscoveryHandler.handle')
         data = self.request[0]
@@ -80,7 +82,7 @@ class DiscoveryServiceThread(threading.Thread):
     def __init__(self, port):
         ip = kodinhenki.util.get_ipv4_address()
         assert ip
-        self.server = SocketServer.UDPServer((ip, port), DiscoveryHandler)
+        self.server = socketserver.UDPServer((ip, port), DiscoveryHandler)
         threading.Thread.__init__(self, target=self.server.serve_forever)
         self.daemon = True
         self.send()

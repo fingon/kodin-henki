@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Mon Sep 22 19:50:45 2014 mstenber
-# Edit time:     58 min
+# Last modified: Sat Sep 27 18:45:25 2014 mstenber
+# Edit time:     59 min
 #
 """
 
@@ -25,7 +25,8 @@ singlethreaded case does not seem very useful.
 """
 
 import datetime
-from kodinhenki.compat import *
+import kodinhenki.compat as compat
+queue = compat.get_queue()
 import kodinhenki.util
 import threading
 
@@ -65,7 +66,7 @@ class Object:
 class Database:
     def __init__(self):
         self._objects = {}
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
         self._lock = threading.RLock()
     def add(self, name, **kwargs):
         o = Object(name=name, **kwargs)

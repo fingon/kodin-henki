@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Tue Sep 23 14:05:24 2014 mstenber
+# Last modified: Sat Sep 27 17:24:37 2014 mstenber
 # Edit time:     24 min
 #
 """
@@ -45,4 +45,4 @@ def test_wemo(caplog):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    test_discover(None)
+    test_wemo(None)

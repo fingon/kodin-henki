@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Tue Sep 23 14:42:17 2014 mstenber
-# Edit time:     36 min
+# Last modified: Sat Sep 27 18:46:39 2014 mstenber
+# Edit time:     50 min
 #
 """
 
@@ -22,29 +22,16 @@ root 'WeMo' object for the kodinhenki database as well.
 """
 
 MAIN_NAME='wemo'
-DEVICE_NAME='%s.%s'
 
 import kodinhenki.db
 import kodinhenki.util
 import kodinhenki.wemo.discover
+import kodinhenki.wemo.device
 import time
-from kodinhenki.compat import urlopen
-from .xsd import device
-
-namespaces = {'bd': 'urn:Belkin:device-1-0'}
-#etree.register_namespace()
 
 import logging
 _debug = logging.debug
 _error = logging.error
-
-class WemoSwitch(kodinhenki.db.Object):
-    def set_state(self, v):
-        raise NotImplementedError
-
-class WemoMotion(kodinhenki.db.Object):
-    def set_state(self, v):
-        pass
 
 send_discover = kodinhenki.util.Signal()
 
@@ -80,11 +67,8 @@ class WeMo(kodinhenki.db.Object):
                  del self._devices[url]
 
     def probe(self, url):
-        data = urlopen(url).read()
-        _debug('got data: %s' % repr(data))
-        o = device.parseString(data)
-        _debug('got device: %s' % repr(o))
-        #raise
+        db = self.get_database()
+        return kodinhenki.wemo.device.from_db_url(db, url)
 
 def _db_state_changed(o, key, by, old, new):
     if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
