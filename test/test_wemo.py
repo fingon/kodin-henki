@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Sat Sep 27 17:24:37 2014 mstenber
-# Edit time:     24 min
+# Last modified: Sat Sep 27 20:32:29 2014 mstenber
+# Edit time:     29 min
 #
 """
 
@@ -19,6 +19,7 @@
 import kodinhenki
 import kodinhenki.wemo as wemo
 import kodinhenki.wemo.discover as discover
+import kodinhenki.wemo.device as device
 from mock import Mock
 import threading
 import time
@@ -31,6 +32,13 @@ def test_wemo(caplog):
     s = threading.Semaphore(0)
     device_seen = Mock()
     discover.device_seen.connect(device_seen)
+    def _bar(o):
+        #o.services['basicevent'].populate()
+        #o.services['basicevent'].GetSerialNo()
+        print(o.services['basicevent'].GetBinaryState())
+        #print(o.services['basicevent'].GetLogFileURL())
+
+    device.device_added.connect(_bar)
     def _foo(address, url, **kwargs):
         #print(urlopen(url).read())
         s.release()
