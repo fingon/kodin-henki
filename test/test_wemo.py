@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Tue Sep 30 08:42:06 2014 mstenber
-# Edit time:     38 min
+# Last modified: Tue Sep 30 09:21:28 2014 mstenber
+# Edit time:     40 min
 #
 """
 
@@ -28,6 +28,8 @@ import logging
 
 import kodinhenki.compat as compat
 urljoin = compat.get_urllib_parse().urljoin
+
+REALLY_WAIT_EVENT=False
 
 def test_wemo(caplog):
     if caplog: caplog.setLevel(logging.DEBUG)
@@ -69,9 +71,11 @@ def test_wemo(caplog):
             raise AssertionError("wait condition not met")
     _wait_s(s_device_seen)
     o.stop()
-    _wait_s(s_event, t=60)
     assert device_seen.called
+    if REALLY_WAIT_EVENT:
+        _wait_s(s_event, t=60)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+    REALLY_WAIT_EVENT = True
     test_wemo(None)
