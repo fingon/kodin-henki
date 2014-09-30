@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 19:03:29 2014 mstenber
-# Last modified: Tue Sep 23 11:53:42 2014 mstenber
-# Edit time:     2 min
+# Last modified: Tue Sep 30 07:41:11 2014 mstenber
+# Edit time:     3 min
 #
 """
 
@@ -45,11 +45,11 @@ def _get_ip_address(af, dest):
     except socket.error:
         pass
 
-def get_ipv4_address():
-    # Google DNS
-    return _get_ip_address(socket.AF_INET, '8.8.8.8')
+# Google DNS by default
+def get_ipv4_address(remote_ip='8.8.8.8'):
+    return _get_ip_address(socket.AF_INET, remote_ip)
 
-def get_ipv6_address():
+def get_ipv6_address(remote_ip='2600::'):
     # Sprint somewhere, but main point is that it's GUA
-    return _get_ip_address(socket.AF_INET6, '2600::')
+    return _get_ip_address(socket.AF_INET6, remote_ip)
 
