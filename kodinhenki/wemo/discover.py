@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:45:37 2014 mstenber
-# Last modified: Sat Sep 27 18:45:06 2014 mstenber
-# Edit time:     48 min
+# Last modified: Tue Sep 30 07:56:52 2014 mstenber
+# Edit time:     65 min
 #
 """
 
@@ -27,7 +27,7 @@ import socket
 import threading
 
 import kodinhenki.compat as compat
-socketserver = compat.get_socketserver()
+_socketserver = compat.get_socketserver()
 
 from kodinhenki.util import Signal
 import kodinhenki.util
@@ -51,21 +51,42 @@ DISCOVERY_REQUEST = DISCOVERY_REQUEST.replace('\n', '\r\n')
 
 device_seen = Signal()
 
-def parse_http_header(data):
+def split_http_start_header_body_lines(data):
     data = data.decode('utf-8')
     lines = data.split('\r\n')
-    lines = [line.strip() for line in lines]
-    lines = list(lines)
-    (proto, rc, verdict) = lines[0].split(' ')
-    if rc != '200':
+    start = None
+    # There may be empty lines
+    for i, line in enumerate(lines):
+        if line.strip():
+            start = line
+            lines = lines[i+1:]
+            break
+    else:
         return
-    lines = lines[1:] # skip first entry
-    items = [line.split(':', 1) for line in lines]
+    for i, line in enumerate(lines):
+        if not line.strip():
+            header = lines[:i]
+            lines = lines[i+1:]
+            break
+    else:
+        header = lines
+        lines = []
+    return start, header, lines
+
+def http_header_lines_to_dict(header):
+    items = [line.split(':', 1) for line in header]
     items = [x for x in items if len(x) == 2]
     items = [(x.strip().lower(), y.strip()) for x, y in items]
     return dict(items)
 
-class DiscoveryHandler(socketserver.BaseRequestHandler):
+def parse_http_header(data):
+    (start, header, body) = split_http_start_header_body_lines(data)
+    (proto, rc, verdict) = start.split(' ', 2)
+    if rc != '200':
+        return
+    return http_header_lines_to_dict(header)
+
+class DiscoveryHandler(_socketserver.BaseRequestHandler):
     def handle(self):
         _debug('DiscoveryHandler.handle')
         data = self.request[0]
@@ -82,7 +103,7 @@ class DiscoveryServiceThread(threading.Thread):
     def __init__(self, port):
         ip = kodinhenki.util.get_ipv4_address()
         assert ip
-        self.server = socketserver.UDPServer((ip, port), DiscoveryHandler)
+        self.server = _socketserver.UDPServer((ip, port), DiscoveryHandler)
         threading.Thread.__init__(self, target=self.server.serve_forever)
         self.daemon = True
         self.send()
