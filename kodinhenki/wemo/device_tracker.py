@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sat Sep 27 18:46:39 2014 mstenber
-# Edit time:     50 min
+# Last modified: Tue Sep 30 07:54:47 2014 mstenber
+# Edit time:     55 min
 #
 """
 
@@ -24,6 +24,7 @@ root 'WeMo' object for the kodinhenki database as well.
 MAIN_NAME='wemo'
 
 import kodinhenki.db
+import kodinhenki.updater
 import kodinhenki.util
 import kodinhenki.wemo.discover
 import kodinhenki.wemo.device
@@ -35,7 +36,7 @@ _error = logging.error
 
 send_discover = kodinhenki.util.Signal()
 
-class WeMo(kodinhenki.db.Object):
+class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
     last_discovery = 0
 
     discover_every = 900
@@ -54,6 +55,14 @@ class WeMo(kodinhenki.db.Object):
         else:
             self._devices[url]['last_seen'] = time.time()
 
+    def probe(self, url):
+        db = self.get_database()
+        return kodinhenki.wemo.device.from_db_url(db, url)
+
+    # Updated interface
+    def next_update_in_seconds(self):
+        now = time.time()
+        return (self.last_discovery + self.discover_every) - now
     def update(self):
         now = time.time()
         # Send new discover messages if need be
@@ -65,10 +74,6 @@ class WeMo(kodinhenki.db.Object):
         for url, d in list(self._devices.items()):
             if d['last_seen'] < now - self.devices_valid_for:
                  del self._devices[url]
-
-    def probe(self, url):
-        db = self.get_database()
-        return kodinhenki.wemo.device.from_db_url(db, url)
 
 def _db_state_changed(o, key, by, old, new):
     if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):

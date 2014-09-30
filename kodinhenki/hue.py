@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Tue Sep 23 13:44:25 2014 mstenber
-# Edit time:     78 min
+# Last modified: Tue Sep 30 07:35:36 2014 mstenber
+# Edit time:     80 min
 #
 """
 
@@ -26,6 +26,7 @@ MAIN_NAME='hue'
 BULB_NAME='%s.%s'
 
 import kodinhenki.db
+import kodinhenki.updater
 import phue
 import time
 import threading
@@ -51,7 +52,7 @@ class HueBulb(kodinhenki.db.Object):
     def turn_off(self):
         self.set('on', False)
 
-class Hue(kodinhenki.db.Object):
+class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     # How long do we believe in the 'current' timestamp?
     # (in seconds)
     light_check_interval = 60
@@ -78,17 +79,11 @@ class Hue(kodinhenki.db.Object):
         return [self.get_database().get(x) for x in self.get_lights()]
     def mark_dirty(self):
         self._lights_dirty_after = 0
+        self.next_update_in_seconds_changed()
+    # Updated implementation
     def next_update_in_seconds(self):
-        if self.should_update():
-            return -1
         return self._lights_dirty_after - time.time()
-    def should_update(self):
-        if not self._lights_dirty_after:
-            return True
-        return self._lights_dirty_after <= time.time()
     def update(self):
-        if not self.should_update():
-            return
         with self._lock:
             b = self.get_bridge(force=self.dynamically_update_lights)
             lobs = b.get_light_objects()
@@ -109,6 +104,7 @@ class Hue(kodinhenki.db.Object):
             l.sort()
             self.set('lights', l, by='bridge')
         self._lights_dirty_after = time.time() + self.light_check_interval
+        # we're automatically readded post-update
 
 def _db_bulb_changed(o, key, by, old, new):
     if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
