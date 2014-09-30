@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Tue Sep 30 09:17:03 2014 mstenber
-# Edit time:     36 min
+# Last modified: Tue Sep 30 17:59:44 2014 mstenber
+# Edit time:     37 min
 #
 """
 
@@ -47,10 +47,17 @@ class WemoBase(kodinhenki.db.Object):
         self.ip = p.netloc.split(':')[0]
         self.services = services
         kodinhenki.db.Object.__init__(self, **kwargs)
+    def is_on(self):
+        return self.get('on')
 
 class WemoSwitch(WemoBase):
     def set_state(self, v):
-        raise NotImplementedError
+        s = v and '1' or '0'
+        self.services['basicevent'].SetBinaryState(BinaryState=s)
+    def turn_on(self):
+        self.set('on', True)
+    def turn_off(self):
+        self.set('on', False)
 
 class WemoMotion(WemoBase):
     def set_state(self, v):

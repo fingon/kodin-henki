@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Tue Sep 30 07:35:36 2014 mstenber
+# Last modified: Tue Sep 30 17:58:29 2014 mstenber
 # Edit time:     80 min
 #
 """
@@ -106,7 +106,7 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
         self._lights_dirty_after = time.time() + self.light_check_interval
         # we're automatically readded post-update
 
-def _db_bulb_changed(o, key, by, old, new):
+def _db_bulb_changed(o, key, by, at, old, new):
     if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
         return
     with o.get_database()._lock:

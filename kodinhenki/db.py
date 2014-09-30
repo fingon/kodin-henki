@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Sat Sep 27 18:45:25 2014 mstenber
-# Edit time:     59 min
+# Last modified: Tue Sep 30 17:54:51 2014 mstenber
+# Edit time:     63 min
 #
 """
 
@@ -24,11 +24,16 @@ singlethreaded case does not seem very useful.
 
 """
 
-import datetime
+import time
 import kodinhenki.compat as compat
 queue = compat.get_queue()
 import kodinhenki.util
 import threading
+
+import logging
+_debug = logging.debug
+_error = logging.error
+
 
 class Object:
     added = kodinhenki.util.Signal()
@@ -36,7 +41,7 @@ class Object:
     changed = kodinhenki.util.Signal()
     def __init__(self, name=None, **state):
         if state:
-            now = datetime.datetime.now()
+            now = time.time()
             state = dict([(key, (value, now)) for key, value in state.items()])
         self._state = state
         self.name = name
@@ -53,15 +58,17 @@ class Object:
     def get_database(self):
         return self._db
     def set(self, key, value, by=None):
+        _debug('set %s.%s=%s %s' % (self.name, key, value, by))
         # Spurious set
         ost = self._state.get(key, None)
         if ost and ost[0] == value:
+            _debug(' .. spurious, no change')
             return
-        now = datetime.datetime.now()
-        st = [value, now, by]
+        now = time.time()
+        st = (value, now, by)
         self._state[key] = st
         ov = ost and ost[0]
-        Object.changed(o=self, key=key, old=ov, new=value, by=by)
+        Object.changed(o=self, key=key, old=ov, at=now, new=value, by=by)
 
 class Database:
     def __init__(self):

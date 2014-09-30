@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Tue Sep 30 09:18:47 2014 mstenber
-# Edit time:     62 min
+# Last modified: Tue Sep 30 17:55:34 2014 mstenber
+# Edit time:     66 min
 #
 """
 
@@ -52,7 +52,7 @@ class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
         for url, d in self._devices.items():
             o = d['o']
             if o.ip == ip:
-                o.set('on', state)
+                o.set('on', state, by='event')
     def device_seen(self, url, **kwargs):
         if not url in self._devices:
             o = self.probe(url)
@@ -81,7 +81,7 @@ class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
             if d['last_seen'] < now - self.devices_valid_for:
                  del self._devices[url]
 
-def _db_state_changed(o, key, by, old, new):
+def _db_state_changed(o, key, by, at, old, new):
     if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
         return
     o.set_state(new)

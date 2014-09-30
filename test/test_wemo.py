@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Tue Sep 30 09:21:28 2014 mstenber
-# Edit time:     40 min
+# Last modified: Tue Sep 30 17:59:58 2014 mstenber
+# Edit time:     50 min
 #
 """
 
@@ -40,15 +40,16 @@ def test_wemo(caplog):
     device_seen = Mock()
     discover.device_seen.connect(device_seen)
     r = event.start_ipv4_receiver(port=8989, remote_ip='1.2.3.4')
-    def _barf(**kwargs):
-        print('event', kwargs)
+    switch = [None]
+    def _event_received(**kwargs):
+        print('event.received', kwargs)
         s_event.release()
-    event.received.connect(_barf)
-
-    def _baz(**kwargs):
-        print('subscribed', kwargs)
-    event.subscribed.connect(_baz)
-    def _bar(o):
+    event.received.connect(_event_received)
+    def _event_subscribed(**kwargs):
+        print('event.subscribed', kwargs)
+    event.subscribed.connect(_event_subscribed)
+    def _device_added(o):
+        print('device.added', o)
         #o.services['basicevent'].populate()
         #o.services['basicevent'].GetSerialNo()
         print(o.services['basicevent'].GetBinaryState())
@@ -56,7 +57,9 @@ def test_wemo(caplog):
         url = urljoin(o.url, o.services['basicevent'].event_sub_url)
         s = event.Subscription(url, r)
         s.update()
-    device.device_added.connect(_bar)
+        if isinstance(o, device.WemoSwitch):
+            switch[0] = o
+    device.device_added.connect(_device_added)
     def _foo(address, url, **kwargs):
         #print(urlopen(url).read())
         s_device_seen.release()
@@ -74,6 +77,15 @@ def test_wemo(caplog):
     assert device_seen.called
     if REALLY_WAIT_EVENT:
         _wait_s(s_event, t=60)
+        assert switch[0]
+        switch = switch[0]
+        print('toggling on')
+        switch.turn_on()
+        time.sleep(1)
+        print('toggling off')
+        switch.turn_off()
+        time.sleep(1)
+        print('done')
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
