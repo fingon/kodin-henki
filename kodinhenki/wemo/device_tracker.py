@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Tue Sep 30 07:54:47 2014 mstenber
-# Edit time:     55 min
+# Last modified: Tue Sep 30 09:18:47 2014 mstenber
+# Edit time:     62 min
 #
 """
 
@@ -28,6 +28,7 @@ import kodinhenki.updater
 import kodinhenki.util
 import kodinhenki.wemo.discover
 import kodinhenki.wemo.device
+import kodinhenki.wemo.event
 import time
 
 import logging
@@ -46,7 +47,12 @@ class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
         kodinhenki.db.Object.__init__(self, *args, **kwargs)
         self._devices = {}
         kodinhenki.wemo.discover.device_seen.connect(self.device_seen)
-
+        kodinhenki.wemo.event.received.connect(self.device_state_event)
+    def device_state_event(self, ip, state):
+        for url, d in self._devices.items():
+            o = d['o']
+            if o.ip == ip:
+                o.set('on', state)
     def device_seen(self, url, **kwargs):
         if not url in self._devices:
             o = self.probe(url)
@@ -82,4 +88,3 @@ def _db_state_changed(o, key, by, old, new):
 
 get = kodinhenki.db.singleton_object_factory(MAIN_NAME, WeMo)
 kodinhenki.db.Object.changed.connect(_db_state_changed)
-

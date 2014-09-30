@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Tue Sep 30 06:33:23 2014 mstenber
-# Edit time:     32 min
+# Last modified: Tue Sep 30 09:17:03 2014 mstenber
+# Edit time:     36 min
 #
 """
 
@@ -25,6 +25,7 @@ from kodinhenki.util import Signal
 
 import kodinhenki.compat as compat
 urlopen = compat.get_urllib_request().urlopen
+_parse = compat.get_urllib_parse()
 
 # we could use this, but why bother?
 #bd_ns = 'urn:Belkin:device-1-0'
@@ -42,6 +43,8 @@ device_added = Signal()
 class WemoBase(kodinhenki.db.Object):
     def __init__(self, url, services, **kwargs):
         self.url = url
+        p = _parse.urlparse(url)
+        self.ip = p.netloc.split(':')[0]
         self.services = services
         kodinhenki.db.Object.__init__(self, **kwargs)
 
