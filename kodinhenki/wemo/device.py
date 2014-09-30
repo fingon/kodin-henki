@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Sat Sep 27 19:59:06 2014 mstenber
+# Last modified: Tue Sep 30 06:33:23 2014 mstenber
 # Edit time:     32 min
 #
 """
@@ -20,7 +20,7 @@ Switch, smirk).
 """
 
 import kodinhenki.db
-import kodinhenki.wemo.device_service
+import kodinhenki.wemo.service
 from kodinhenki.util import Signal
 
 import kodinhenki.compat as compat
@@ -96,7 +96,7 @@ def _from_db_url_string(db, url, data):
     except KeyError:
         sol = list(doc.getElementsByTagName('service'))
         services = list([
-            kodinhenki.wemo.device_service.from_url_object(url, o2)
+            kodinhenki.wemo.service.from_url_object(url, o2)
             for o2 in sol])
         services = dict([(s.service_type.split(':')[-2].lower(), s) for s in services])
         #_debug('%s enumerated %s => %s' % (name, sol, services))

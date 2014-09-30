@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 #
-# $Id: device_service.py $
+# $Id: service.py $
 #
 # Author: Markus Stenberg <fingon@iki.fi>
 #
