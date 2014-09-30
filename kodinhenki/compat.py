@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 19:06:38 2014 mstenber
-# Last modified: Sat Sep 27 18:57:32 2014 mstenber
+# Last modified: Tue Sep 30 06:44:28 2014 mstenber
 # Edit time:     11 min
 #
 """
@@ -53,3 +53,10 @@ def get_urllib_parse():
         import urlparse as _x
     return _x
 
+def get_http_server():
+    try:
+        import http.server as _x
+    except ImportError:
+        # 2.x-ism
+        import BaseHTTPServer as _x
+    return _x
