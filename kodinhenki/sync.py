@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Wed Oct  1 14:54:20 2014 mstenber
-# Edit time:     60 min
+# Last modified: Wed Oct  1 15:08:21 2014 mstenber
+# Edit time:     64 min
 #
 """
 
@@ -85,17 +85,22 @@ class SyncReceiver(_socketserver.StreamRequestHandler):
 
 class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
     daemon_threads = True
+    update_on_connect = True
     def __init__(self, db, client, *args, **kwargs):
         self.db = db
         self._receivers = []
         self.remove_receiver = self._receivers.remove
         if not client:
             _socketserver.TCPServer.__init__(self, *args, **kwargs)
+        else:
+            self.update_on_connect = False
         self.db.object_added.connect(self.db_object_added)
         self.db.object_changed.connect(self.db_object_changed)
         self.db.object_removed.connect(self.db_object_removed)
     def add_receiver(self, r):
         self._receivers.append(r)
+        if not self.update_on_connect:
+            return
         # Replay current database state for non-sync sourced things
         cb = functools.partial(self.send_update_one, r)
         for n, o in self.db.items():
@@ -133,19 +138,33 @@ def start_server(db, ip='', port=0):
 
 def start_client(db, addr):
     server = SyncServer(db, True)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(addr)
+    o = {'alive': True}
     def _f():
-        SyncReceiver(sock, None, server)
+        while o['alive']:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(addr)
+                o['sock'] = sock
+            except:
+                _error("socket-connect failed, retrying in a second")
+                time.sleep(1)
+                continue
+            SyncReceiver(sock, None, server)
+            _error("client connection died(?), retrying in a second")
+            time.sleep(1)
     ct = threading.Thread(target=_f)
     ct.daemon = True
     ct.start()
-    return {'thread': ct, 'sock': sock}
+    o['thread'] = ct
+    return o
 
 def stop_server(s):
     s['server'].shutdown()
 
 def stop_client(s):
-    s['sock'].close()
+    s['alive'] = False
+    sock = s.get('sock', None)
+    if sock:
+        sock.close()
     # TBD: is there some way to force faster closure of client?
 
