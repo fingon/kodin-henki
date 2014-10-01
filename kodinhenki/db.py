@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Wed Oct  1 13:51:17 2014 mstenber
-# Edit time:     82 min
+# Last modified: Wed Oct  1 14:51:16 2014 mstenber
+# Edit time:     86 min
 #
 """
 
@@ -29,8 +29,6 @@ constructors called in singleton_object_factory do).
 """
 
 import time
-import kodinhenki.compat as compat
-queue = compat.get_queue()
 import kodinhenki.util
 
 import logging
@@ -43,7 +41,7 @@ class Object:
     def __init__(self, name, **state):
         if state:
             now = time.time()
-            state = dict([(key, (value, now)) for key, value in state.items()])
+            state = dict([(key, (value, now, None)) for key, value in state.items()])
         self._state = state
         self.name = name
     def on_add_to_db(self, db):
@@ -68,6 +66,8 @@ class Object:
         return self._state[key][1]
     def get_database(self):
         return self._db
+    def items(self):
+        return self._state.items()
     def set(self, key, value, by=None, now=None):
         _debug('set %s.%s=%s %s' % (self.name, key, value, by))
         # Spurious set
@@ -85,30 +85,32 @@ class Object:
 class Database:
     def __init__(self):
         self._objects = {}
-        self._queue = queue.Queue()
         self.object_added = kodinhenki.util.Signal()
         self.object_removed = kodinhenki.util.Signal()
         self.object_changed = kodinhenki.util.Signal()
-    def add(self, name, **kwargs):
+    def add(self, name, by=None, **kwargs):
         o = Object(name, **kwargs)
-        self.add_object(o)
-    def add_object(self, o):
+        self.add_object(o, by)
+        return o
+    def add_object(self, o, by=None):
         assert o.name not in self._objects
         self._objects[o.name] = o
         o.set_db(self)
-        self.object_added(o=o)
+        self.object_added(o=o, by=by)
     def exists(self, name):
         return name in self._objects
     def get(self, name):
         return self._objects[name]
-    def remove(self, name):
-        self.remove_object(self.get(name))
-    def remove_object(self, o):
+    def items(self):
+        return self._objects.items()
+    def remove(self, name, by=None):
+        self.remove_object(self.get(name), by)
+    def remove_object(self, o, by=None):
         assert o.name in self._objects
         del self._objects[o.name]
         assert o._db is self
         o.set_db(None)
-        self.object_removed(o=o)
+        self.object_removed(o=o, by=by)
 
 
 def singleton_object_factory(name, cls):
