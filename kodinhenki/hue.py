@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Tue Sep 30 17:58:29 2014 mstenber
-# Edit time:     80 min
+# Last modified: Wed Oct  1 12:51:47 2014 mstenber
+# Edit time:     88 min
 #
 """
 
@@ -29,7 +29,6 @@ import kodinhenki.db
 import kodinhenki.updater
 import phue
 import time
-import threading
 
 class HueBulb(kodinhenki.db.Object):
     def get_parent(self):
@@ -64,14 +63,10 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     _lights_dirty_after = 0
     _b = None
 
-    # per-CLASS lock - but who cares, there should be only one instance
-    _lock = threading.RLock()
-
     def get_bridge(self, force=False):
-        with self._lock:
-            if not self._b or force:
-                self._b = phue.Bridge(self.get('ip'))
-            return self._b
+        if not self._b or force:
+            self._b = phue.Bridge(self.get('ip'))
+        return self._b
     # Lights are stored not as objects, but as names
     def get_lights(self):
         return self.get_defaulted('lights', [])
@@ -84,37 +79,33 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     def next_update_in_seconds(self):
         return self._lights_dirty_after - time.time()
     def update(self):
-        with self._lock:
-            b = self.get_bridge(force=self.dynamically_update_lights)
-            lobs = b.get_light_objects()
+        b = self.get_bridge(force=self.dynamically_update_lights)
+        lobs = b.get_light_objects()
         db = self.get_database()
-        with db._lock:
-            l = []
-            for light in lobs:
-                #name = unicode(light.name, 'utf-8')
-                name = light.name
-                n = BULB_NAME % (MAIN_NAME, name)
-                if not db.exists(n):
-                    b = HueBulb(name=n, light_name=name)
-                    db.add_object(b)
-                else:
-                    b = db.get(n)
-                b.set('on', light.on, by='bridge')
-                l.append(n)
-            l.sort()
-            self.set('lights', l, by='bridge')
+        l = []
+        for light in lobs:
+            #name = unicode(light.name, 'utf-8')
+            name = light.name
+            n = BULB_NAME % (MAIN_NAME, name)
+            if not db.exists(n):
+                b = HueBulb(name=n, light_name=name)
+                db.add_object(b)
+            else:
+                b = db.get(n)
+            b.set('on', light.on, by='bridge')
+            l.append(n)
+        l.sort()
+        self.set('lights', l, by='bridge')
         self._lights_dirty_after = time.time() + self.light_check_interval
         # we're automatically readded post-update
 
 def _db_bulb_changed(o, key, by, at, old, new):
     if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
         return
-    with o.get_database()._lock:
-        hue = o.get_parent()
-        with hue._lock:
-            lo = o.get_light_object()
-            lo.on = new
-            hue.mark_dirty()
+    hue = o.get_parent()
+    lo = o.get_light_object()
+    lo.on = new
+    hue.mark_dirty()
 
 kodinhenki.db.Object.changed.connect(_db_bulb_changed)
 

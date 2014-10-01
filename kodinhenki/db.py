@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Tue Sep 30 17:54:51 2014 mstenber
-# Edit time:     63 min
+# Last modified: Wed Oct  1 12:49:53 2014 mstenber
+# Edit time:     71 min
 #
 """
 
@@ -22,13 +22,16 @@ message queue abstraction should be used (e.g. pipe all signals
 somewhere safe). The overhead of adding spurious locking also for
 singlethreaded case does not seem very useful.
 
+Due to GIL, there should not be THAT much need for locking of state in
+any case. Nothing here should block (although who knows what
+constructors called in singleton_object_factory do).
+
 """
 
 import time
 import kodinhenki.compat as compat
 queue = compat.get_queue()
 import kodinhenki.util
-import threading
 
 import logging
 _debug = logging.debug
@@ -74,7 +77,6 @@ class Database:
     def __init__(self):
         self._objects = {}
         self._queue = queue.Queue()
-        self._lock = threading.RLock()
     def add(self, name, **kwargs):
         o = Object(name=name, **kwargs)
         self.add_object(o)
@@ -99,11 +101,10 @@ class Database:
 
 def singleton_object_factory(name, cls):
     def _f(db, *args, **kwargs):
-        with db._lock:
-            if db.exists(name): return db.get(name)
-            o = cls(name=name, *args, **kwargs)
-            db.add_object(o)
-            return o
+        if db.exists(name): return db.get(name)
+        o = cls(name=name, *args, **kwargs)
+        db.add_object(o)
+        return o
     return _f
 
 _db = None
