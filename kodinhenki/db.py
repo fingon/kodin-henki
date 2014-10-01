@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Wed Oct  1 14:51:16 2014 mstenber
+# Last modified: Wed Oct  1 15:39:07 2014 mstenber
 # Edit time:     86 min
 #
 """
@@ -89,14 +89,13 @@ class Database:
         self.object_removed = kodinhenki.util.Signal()
         self.object_changed = kodinhenki.util.Signal()
     def add(self, name, by=None, **kwargs):
-        o = Object(name, **kwargs)
-        self.add_object(o, by)
-        return o
+        return self.add_object(Object(name, **kwargs), by)
     def add_object(self, o, by=None):
         assert o.name not in self._objects
         self._objects[o.name] = o
         o.set_db(self)
         self.object_added(o=o, by=by)
+        return o
     def exists(self, name):
         return name in self._objects
     def get(self, name):
