@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Tue Sep 30 17:55:34 2014 mstenber
-# Edit time:     66 min
+# Last modified: Wed Oct  1 13:51:38 2014 mstenber
+# Edit time:     73 min
 #
 """
 
@@ -48,6 +48,15 @@ class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
         self._devices = {}
         kodinhenki.wemo.discover.device_seen.connect(self.device_seen)
         kodinhenki.wemo.event.received.connect(self.device_state_event)
+    def on_add_to_db(self, db):
+        db.object_changed.connect(self.db_state_changed)
+    def on_remove_from_db(self, db):
+        db.object_changed.disconnect(self.db_state_changed)
+    def db_state_changed(self, o, key, by, at, old, new):
+        if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
+            return
+        o.set_state(new)
+
     def device_state_event(self, ip, state):
         for url, d in self._devices.items():
             o = d['o']
@@ -81,10 +90,4 @@ class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
             if d['last_seen'] < now - self.devices_valid_for:
                  del self._devices[url]
 
-def _db_state_changed(o, key, by, at, old, new):
-    if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
-        return
-    o.set_state(new)
-
 get = kodinhenki.db.singleton_object_factory(MAIN_NAME, WeMo)
-kodinhenki.db.Object.changed.connect(_db_state_changed)

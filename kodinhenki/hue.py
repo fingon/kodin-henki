@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Wed Oct  1 12:51:47 2014 mstenber
-# Edit time:     88 min
+# Last modified: Wed Oct  1 13:48:25 2014 mstenber
+# Edit time:     94 min
 #
 """
 
@@ -63,6 +63,16 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     _lights_dirty_after = 0
     _b = None
 
+    def on_add_to_db(self, db):
+        db.object_changed.connect(self.bulb_changed)
+    def on_remove_from_db(self, db):
+        db.object_changed.disconnect(self.bulb_changed)
+    def bulb_changed(self, o, key, by, at, old, new):
+        if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
+            return
+        lo = o.get_light_object()
+        lo.on = new
+        self.mark_dirty()
     def get_bridge(self, force=False):
         if not self._b or force:
             self._b = phue.Bridge(self.get('ip'))
@@ -98,16 +108,6 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
         self.set('lights', l, by='bridge')
         self._lights_dirty_after = time.time() + self.light_check_interval
         # we're automatically readded post-update
-
-def _db_bulb_changed(o, key, by, at, old, new):
-    if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
-        return
-    hue = o.get_parent()
-    lo = o.get_light_object()
-    lo.on = new
-    hue.mark_dirty()
-
-kodinhenki.db.Object.changed.connect(_db_bulb_changed)
 
 get = kodinhenki.db.singleton_object_factory(MAIN_NAME, Hue)
 

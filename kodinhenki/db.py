@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Wed Oct  1 12:49:53 2014 mstenber
-# Edit time:     71 min
+# Last modified: Wed Oct  1 13:51:17 2014 mstenber
+# Edit time:     82 min
 #
 """
 
@@ -39,17 +39,25 @@ _error = logging.error
 
 
 class Object:
-    added = kodinhenki.util.Signal()
-    removed = kodinhenki.util.Signal()
-    changed = kodinhenki.util.Signal()
-    def __init__(self, name=None, **state):
+    _db = None
+    def __init__(self, name, **state):
         if state:
             now = time.time()
             state = dict([(key, (value, now)) for key, value in state.items()])
         self._state = state
         self.name = name
-    def __del__(self):
-        Object.removed(o=self)
+    def on_add_to_db(self, db):
+        pass
+    def on_remove_from_db(self, db):
+        pass
+    def set_db(self, db):
+        if db:
+            assert self._db is None
+            self.on_add_to_db(db)
+        else:
+            assert self._db is not None
+            self.on_remove_from_db(self._db)
+        self._db = db
     def get(self, key):
         return self._state[key][0]
     def get_defaulted(self, key, default=None):
@@ -60,31 +68,35 @@ class Object:
         return self._state[key][1]
     def get_database(self):
         return self._db
-    def set(self, key, value, by=None):
+    def set(self, key, value, by=None, now=None):
         _debug('set %s.%s=%s %s' % (self.name, key, value, by))
         # Spurious set
         ost = self._state.get(key, None)
         if ost and ost[0] == value:
             _debug(' .. spurious, no change')
             return
-        now = time.time()
+        if not now:
+            now = time.time()
         st = (value, now, by)
         self._state[key] = st
         ov = ost and ost[0]
-        Object.changed(o=self, key=key, old=ov, at=now, new=value, by=by)
+        self._db.object_changed(o=self, key=key, old=ov, at=now, new=value, by=by)
 
 class Database:
     def __init__(self):
         self._objects = {}
         self._queue = queue.Queue()
+        self.object_added = kodinhenki.util.Signal()
+        self.object_removed = kodinhenki.util.Signal()
+        self.object_changed = kodinhenki.util.Signal()
     def add(self, name, **kwargs):
-        o = Object(name=name, **kwargs)
+        o = Object(name, **kwargs)
         self.add_object(o)
     def add_object(self, o):
         assert o.name not in self._objects
         self._objects[o.name] = o
-        o._db = self
-        Object.added(o=o)
+        o.set_db(self)
+        self.object_added(o=o)
     def exists(self, name):
         return name in self._objects
     def get(self, name):
@@ -95,14 +107,14 @@ class Database:
         assert o.name in self._objects
         del self._objects[o.name]
         assert o._db is self
-        del o._db
-        Object.removed(o=o)
+        o.set_db(None)
+        self.object_removed(o=o)
 
 
 def singleton_object_factory(name, cls):
     def _f(db, *args, **kwargs):
         if db.exists(name): return db.get(name)
-        o = cls(name=name, *args, **kwargs)
+        o = cls(name, *args, **kwargs)
         db.add_object(o)
         return o
     return _f

@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:53:31 2014 mstenber
-# Last modified: Mon Sep 22 19:04:45 2014 mstenber
-# Edit time:     26 min
+# Last modified: Wed Oct  1 13:41:33 2014 mstenber
+# Edit time:     27 min
 #
 """
 
@@ -35,10 +35,10 @@ def test_o():
     ma = Mock()
     mr = Mock()
     mc = Mock()
-    kodinhenki.Object.added.connect(ma)
-    kodinhenki.Object.removed.connect(mr)
-    kodinhenki.Object.changed.connect(mc)
     d = kodinhenki.get_database()
+    d.object_added.connect(ma)
+    d.object_removed.connect(mr)
+    d.object_changed.connect(mc)
     # Should raise exception if no such object found
     try:
         d.get(name='foo')
@@ -82,9 +82,9 @@ def test_o():
     assert mr.called
 
     # Remove listeners
-    kodinhenki.Object.added.disconnect(ma)
-    kodinhenki.Object.removed.disconnect(mr)
-    kodinhenki.Object.changed.disconnect(mc)
+    d.object_added.disconnect(ma)
+    d.object_removed.disconnect(mr)
+    d.object_changed.disconnect(mc)
 
 def test_singleton_factory():
     db = kodinhenki.db.Database()
