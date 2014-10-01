@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 16:19:15 2014 mstenber
-# Last modified: Mon Sep 22 19:51:15 2014 mstenber
+# Last modified: Wed Oct  1 15:54:26 2014 mstenber
 # Edit time:     21 min
 #
 """
@@ -48,7 +48,9 @@ def test_hue():
     assert h
 
     # Run update by hand
+    assert h.next_update_in_seconds() < 0
     h.update()
+    assert h.next_update_in_seconds() > 0
 
     l = list(h.get_lights())
     assert len(l) == 3

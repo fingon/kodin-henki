@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Tue Sep 30 17:59:58 2014 mstenber
-# Edit time:     50 min
+# Last modified: Wed Oct  1 15:53:37 2014 mstenber
+# Edit time:     51 min
 #
 """
 
@@ -56,7 +56,9 @@ def test_wemo(caplog):
         #print(o.services['basicevent'].GetLogFileURL())
         url = urljoin(o.url, o.services['basicevent'].event_sub_url)
         s = event.Subscription(url, r)
+        assert s.next_update_in_seconds() < 0
         s.update()
+        assert s.next_update_in_seconds() > 0
         if isinstance(o, device.WemoSwitch):
             switch[0] = o
     device.device_added.connect(_device_added)
