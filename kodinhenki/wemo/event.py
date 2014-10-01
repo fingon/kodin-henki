@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Tue Sep 30 09:08:37 2014 mstenber
-# Edit time:     52 min
+# Last modified: Wed Oct  1 15:52:30 2014 mstenber
+# Edit time:     60 min
 #
 """
 
@@ -114,11 +114,12 @@ class Subscription(kodinhenki.updater.Updated):
         else:
             # retry in a while..
             self.fails = self.fails + 1
-            return 5 * 2 ** self.fails
+            self.subscription_valid_until = time.time() + 5 * 2 ** self.fails
+            return
         self.fails = 0
         _debug(' %s/%s' % (info, data))
         subscribed(url=self.url, seconds=seconds)
-        return seconds
+        self.subscription_valid_until = time.time() + seconds - 5
 
 def subscribe(url, receiver):
     s = Subscription(url, receiver)
