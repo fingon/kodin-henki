@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Wed Oct  1 15:08:21 2014 mstenber
-# Edit time:     64 min
+# Last modified: Wed Oct  1 15:48:04 2014 mstenber
+# Edit time:     67 min
 #
 """
 
@@ -34,6 +34,7 @@ where:
  cmd = set
   => args: name, k, v, when [by is lost]
 
+ cmd = sync_end ( start is implicit)
 """
 
 import kodinhenki.db as db
@@ -52,6 +53,7 @@ _debug = logging.debug
 _error = logging.error
 
 request_handled = Signal()
+in_sync = Signal()
 
 BY='sync'
 
@@ -76,6 +78,8 @@ class SyncReceiver(_socketserver.StreamRequestHandler):
             elif d[0] == 'set':
                 (n, k, v, when) = d[1:]
                 self.server.db.get(n).set(k, v, by=BY, now=when)
+            elif d[0] == 'sync_end':
+                in_sync()
             else:
                 raise NotImplementedError('unknown input', d)
             request_handled()
@@ -105,6 +109,7 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
         cb = functools.partial(self.send_update_one, r)
         for n, o in self.db.items():
             self.produce_updates(o, cb)
+        self.send_update_one(r, 'sync_end')
     def produce_updates(self, o, cb):
         cb('add', o.name)
         for k, (v, when, by) in o.items():
