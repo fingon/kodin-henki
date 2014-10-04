@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Sat Oct  4 13:18:09 2014 mstenber
-# Edit time:     91 min
+# Last modified: Sat Oct  4 14:36:02 2014 mstenber
+# Edit time:     94 min
 #
 """
 
@@ -32,8 +32,9 @@ import time
 import kodinhenki.util
 
 import logging
-_debug = logging.debug
-_error = logging.error
+logger = logging.getLogger('kh.db')
+_debug = logger.debug
+_error = logger.error
 
 
 class Object:
@@ -102,6 +103,13 @@ class Database:
         return name in self._objects
     def get(self, name):
         return self._objects[name]
+    def get_if_exists(self, name):
+        if self.exists(name):
+            return self.get(name)
+    def get_or_create(self, name, **kwargs):
+        if self.exists(name):
+            return self.get(name)
+        return self.add(name, **kwargs)
     def keys(self):
         return self._objects.keys()
     def items(self):

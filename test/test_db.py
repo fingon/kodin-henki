@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:53:31 2014 mstenber
-# Last modified: Wed Oct  1 13:41:33 2014 mstenber
-# Edit time:     27 min
+# Last modified: Sat Oct  4 15:11:04 2014 mstenber
+# Edit time:     28 min
 #
 """
 
@@ -80,6 +80,14 @@ def test_o():
     # Make sure removal notification works
     d.remove(name='foo')
     assert mr.called
+
+    # Make sure the new get accessors work.
+    o3 = d.get_if_exists('na')
+    assert not o3
+    o3 = d.get_or_create('na')
+    assert o3
+    o3 = d.get('na')
+    assert o3
 
     # Remove listeners
     d.object_added.disconnect(ma)
