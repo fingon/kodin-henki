@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Wed Oct  1 12:52:57 2014 mstenber
-# Edit time:     21 min
+# Last modified: Sat Oct  4 12:30:42 2014 mstenber
+# Edit time:     22 min
 #
 """
 
@@ -50,7 +50,6 @@ def add(o):
     nu = o.next_update_in_seconds()
     if nu < 0:
         nu = 0
-    t = threading.Timer(nu, _run)
     def _run():
         with _queue_lock:
             # If the object somehow disappeared/changed in queue, do nothing
@@ -63,6 +62,7 @@ def add(o):
             if o in _queue:
                 return
             add(o)
+    t = threading.Timer(nu, _run)
     with _queue_lock:
         assert not o in _queue
         t.start()
@@ -80,6 +80,7 @@ def remove(o):
 
 def remove_all():
     with _queue_lock:
-        for o, t in _queue.items():
-            remove(o)
-
+        while not is_empty():
+            for o, t in _queue.items():
+                remove(o)
+                break
