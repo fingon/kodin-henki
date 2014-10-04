@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Sat Oct  4 12:45:44 2014 mstenber
-# Edit time:     25 min
+# Last modified: Sat Oct  4 14:36:11 2014 mstenber
+# Edit time:     27 min
 #
 """
 
@@ -31,8 +31,9 @@ can remove+readd object.
 import threading
 
 import logging
-_debug = logging.debug
-_error = logging.error
+logger = logging.getLogger('kh.updater')
+_debug = logger.debug
+_error = logger.error
 
 class Updated:
     def next_update_in_seconds_changed(self):
