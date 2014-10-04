@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Wed Oct  1 15:52:30 2014 mstenber
-# Edit time:     60 min
+# Last modified: Sat Oct  4 12:55:33 2014 mstenber
+# Edit time:     64 min
 #
 """
 
@@ -20,7 +20,6 @@ Simple subscriber + event handling for a single service.
 
 import kodinhenki.updater
 import kodinhenki.wemo.discover
-from xml.dom.minidom import parseString
 
 import kodinhenki.compat
 _request = kodinhenki.compat.get_urllib_request()
@@ -32,11 +31,14 @@ from kodinhenki.util import Signal
 subscribed = Signal()
 received = Signal()
 
+import time
+import threading
+from xml.dom.minidom import parseString
+
 import logging
 _debug = logging.debug
 _error = logging.error
 
-import threading
 
 class CustomMethodRequest(_request.Request):
     SUBSCRIBE='SUBSCRIBE'
@@ -91,7 +93,7 @@ class Subscription(kodinhenki.updater.Updated):
         self.receiver = receiver
     def next_update_in_seconds(self):
         now = time.time()
-        return now - self.subscription_valid_until
+        return self.subscription_valid_until - now
     def update(self):
         server_address = self.receiver['server'].server_address
         _debug('subscribing to %s (and receiving at %s)' % (self.url, server_address))
