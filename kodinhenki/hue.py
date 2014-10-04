@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Wed Oct  1 13:48:25 2014 mstenber
-# Edit time:     94 min
+# Last modified: Sat Oct  4 13:28:01 2014 mstenber
+# Edit time:     97 min
 #
 """
 
@@ -29,6 +29,12 @@ import kodinhenki.db
 import kodinhenki.updater
 import phue
 import time
+
+BY_US='hue'
+
+import logging
+_debug = logging.debug
+_error = logging.error
 
 class HueBulb(kodinhenki.db.Object):
     def get_parent(self):
@@ -68,8 +74,9 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     def on_remove_from_db(self, db):
         db.object_changed.disconnect(self.bulb_changed)
     def bulb_changed(self, o, key, by, at, old, new):
-        if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
+        if not (key == 'on' and by != BY_US and o.name.startswith(MAIN_NAME)):
             return
+        _debug('setting light state', o.name, new)
         lo = o.get_light_object()
         lo.on = new
         self.mark_dirty()
@@ -102,10 +109,10 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
                 db.add_object(b)
             else:
                 b = db.get(n)
-            b.set('on', light.on, by='bridge')
+            b.set('on', light.on, by=BY_US)
             l.append(n)
         l.sort()
-        self.set('lights', l, by='bridge')
+        self.set('lights', l, by=BY_US)
         self._lights_dirty_after = time.time() + self.light_check_interval
         # we're automatically readded post-update
 

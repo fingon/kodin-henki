@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sat Oct  4 12:51:45 2014 mstenber
-# Edit time:     83 min
+# Last modified: Sat Oct  4 13:26:31 2014 mstenber
+# Edit time:     84 min
 #
 """
 
@@ -22,6 +22,7 @@ root 'WeMo' object for the kodinhenki database as well.
 """
 
 MAIN_NAME='wemo'
+BY_US='wemo'
 
 import kodinhenki.db
 import kodinhenki.updater as updater
@@ -66,7 +67,7 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
     def on_remove_from_db(self, db):
         db.object_changed.disconnect(self.db_state_changed)
     def db_state_changed(self, o, key, by, at, old, new):
-        if not (key == 'on' and not by and o.name.startswith(MAIN_NAME)):
+        if not (key == 'on' and by != BY_US and o.name.startswith(MAIN_NAME)):
             return
         o.set_state(new)
 
@@ -74,7 +75,7 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
         for url, d in self._devices.items():
             o = d['o']
             if o.ip == ip:
-                o.set('on', state, by='event')
+                o.set('on', state, by=BY_US)
     def device_seen(self, url, **kwargs):
         if not url in self._devices:
             o = self.probe(url)
