@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Sat Oct  4 13:29:15 2014 mstenber
-# Edit time:     57 min
+# Last modified: Sat Oct  4 17:27:48 2014 mstenber
+# Edit time:     60 min
 #
 """
 
@@ -40,8 +40,7 @@ def test_wemo(caplog):
     def _event_received(**kwargs):
         print('event.received', kwargs)
     event.received.connect(_event_received)
-    def _event_subscribed(**kwargs):
-        print('event.subscribed', kwargs)
+    _event_subscribed = Mock()
     event.subscribed.connect(_event_subscribed)
     def _device_added(o):
         print('device.added', o)
@@ -65,7 +64,7 @@ def test_wemo(caplog):
     o.stop()
     assert device_seen.called
     if caplog is None:
-        event.subscribed.wait(timeout=60)
+        assert _event_subscribed.called or event.subscribed.wait(timeout=60)
         assert switch[0]
         switch = switch[0]
         print('toggling on')
