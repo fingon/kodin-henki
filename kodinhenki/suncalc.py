@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Apr 19 19:21:34 2014 mstenber
-# Last modified: Thu Apr 24 21:16:09 2014 mstenber
-# Edit time:     77 min
+# Last modified: Sat Oct  4 17:38:22 2014 mstenber
+# Edit time:     79 min
 #
 """
 
@@ -20,12 +20,14 @@ Based on http://williams.best.vwh.net/sunrise_sunset_algorithm.htm
 
 """
 
+ZENITH_LOWISH=75
+ZENITH_LOW=80
 ZENITH_OFFICIAL=90
 ZENITH_CIVIL=96
 ZENITH_NAUTICAL=102
 ZENITH_ASTRONOMICAL=108
 
-ZENITHS=[ZENITH_OFFICIAL, ZENITH_CIVIL, ZENITH_NAUTICAL, ZENITH_ASTRONOMICAL]
+ZENITHS=[ZENITH_LOWISH, ZENITH_LOW, ZENITH_OFFICIAL, ZENITH_CIVIL, ZENITH_NAUTICAL, ZENITH_ASTRONOMICAL]
 
 ZENITH2NAME={ZENITH_OFFICIAL:'official',
              ZENITH_CIVIL:'civil',
@@ -35,7 +37,7 @@ ZENITH2NAME={ZENITH_OFFICIAL:'official',
 
 DEFAULT_LON=25
 DEFAULT_LAT=60
-DEFAULT_ZENITH=ZENITH_OFFICIAL
+DEFAULT_ZENITH=ZENITH_LOWISH
 
 import datetime
 try:
