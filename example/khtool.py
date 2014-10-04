@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Sat Oct  4 13:46:00 2014 mstenber
-# Edit time:     10 min
+# Last modified: Sat Oct  4 14:40:13 2014 mstenber
+# Edit time:     13 min
 #
 """
 
@@ -22,8 +22,11 @@ from __future__ import print_function
 import argparse
 import kodinhenki as kh
 import kodinhenki.sync as sync
+import time
 
 p = argparse.ArgumentParser(description='view/set kh state')
+p.add_argument('-v', '--verbose', action='store_true',
+               help='verbose output')
 p.add_argument('--ip', default='127.0.0.1', type=str,
                help='address of the kh server')
 p.add_argument('--port', default=31342, type=int,
@@ -35,8 +38,14 @@ db = kh.get_database()
 sync.start_client(db, (args.ip, args.port))
 sync.in_sync.wait()
 def _dump_one(ok, kk):
-    v = db.get(ok).get(kk)
-    print('%s/%s=%s' % (ok, kk, v))
+    o = db.get(ok)
+    v = o.get(kk)
+    changed = ''
+    if args.verbose:
+        changed = o.get_changed(kk)
+        if changed:
+            changed = ' (-%d)' % (time.time() - changed)
+    print('%s/%s=%s%s' % (ok, kk, v, changed))
 def _dump_object(ok):
     for kk in sorted(db.get(ok).keys()):
         _dump_one(ok, kk)
