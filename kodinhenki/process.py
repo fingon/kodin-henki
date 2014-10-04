@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:10:38 2014 mstenber
-# Last modified: Wed Oct  1 15:22:39 2014 mstenber
-# Edit time:     9 min
+# Last modified: Sat Oct  4 14:46:48 2014 mstenber
+# Edit time:     11 min
 #
 """
 
@@ -20,7 +20,7 @@ Usage: .start({key: substring[, key: substring, ..]})
 
 """
 
-import kodinhenki.db as db
+import kodinhenki as kh
 import kodinhenki.updater as updater
 
 import os
@@ -28,24 +28,23 @@ import os
 PS_STRING = 'ps awx'
 
 class ProcessMonitor(updater.Updated):
-    def __init__(self, pdict):
+    def __init__(self, db, pdict):
+        self.db = db or kh.get_database()
         self.pdict = pdict
         # Add the objects
-        d = db.get_database()
         for k in pdict.keys():
-            d.add(name=k).set('on', False)
+            self.db.get_or_create(name=k).set('on', False)
     def next_update_in_seconds(self):
         return 30 # hardcoded, but oh well
     def update(self):
         with os.popen(PS_STRING, 'r') as psfile:
             lines = list(psfile)
         # We _know_ the objects exist
-        d = db.get_database()
         for name, match in self.pdict.items():
             on = True if any (match in l for l in lines) else False
-            d.get(name).set('on', on)
+            self.db.get(name).set('on', on)
 
-def start(d):
-    m = ProcessMonitor(d)
+def start(d, db=None):
+    m = ProcessMonitor(db, d)
     updater.add(m)
     return m
