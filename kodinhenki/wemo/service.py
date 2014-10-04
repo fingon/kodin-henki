@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 18:14:32 2014 mstenber
-# Last modified: Sat Sep 27 20:31:54 2014 mstenber
-# Edit time:     41 min
+# Last modified: Sat Oct  4 17:01:20 2014 mstenber
+# Edit time:     42 min
 #
 """
 
@@ -67,7 +67,7 @@ class Action:
         'Content-Type': 'text/xml'}
         _debug('url:%s - headers:%s - data:%s' % (self.url, headers, data))
         req = urllib_request.Request(self.url, data.encode('utf-8'), headers)
-        data = urlopen(req).read()
+        data = urlopen(req, None, 5).read()
         doc = parseString(data)
         # Doc contains Envelope + Body + X + then inside that, key = value
         bl = doc.getElementsByTagNameNS(soap_ns, 'Body')
@@ -92,7 +92,7 @@ class Service:
         self.populated = True
         assert self.scdp
         nurl = urljoin(self.url, self.scdp)
-        data = urlopen(nurl).read()
+        data = urlopen(nurl, None, 5).read()
         #_debug('got sdata: %s' % repr(data))
         doc = parseString(data)
         assert doc

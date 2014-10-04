@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Sat Oct  4 16:45:35 2014 mstenber
-# Edit time:     78 min
+# Last modified: Sat Oct  4 17:02:07 2014 mstenber
+# Edit time:     81 min
 #
 """
 
@@ -98,7 +98,7 @@ def start_ipv4_receiver(ip=None, port=0, remote_ip=None, **kwargs):
 
 class Subscription(kodinhenki.updater.Updated):
     subscription_valid_until = 0
-    default_seconds = 1800
+    default_seconds = 60
     fails = 0
     def __init__(self, url, receiver):
         self.url = url
@@ -115,7 +115,7 @@ class Subscription(kodinhenki.updater.Updated):
                    'NT': 'upnp:event',
                    }
         req = CustomMethodRequest('SUBSCRIBE', self.url, headers=headers)
-        o = urlopen(req)
+        o = urlopen(req, None, 5)
         data = o.read()
         info = dict(o.info().items()) # = header as a dict
         for k, v in info.items():

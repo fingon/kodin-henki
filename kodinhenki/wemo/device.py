@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Tue Sep 30 17:59:44 2014 mstenber
-# Edit time:     37 min
+# Last modified: Sat Oct  4 17:01:56 2014 mstenber
+# Edit time:     38 min
 #
 """
 
@@ -116,7 +116,7 @@ def _from_db_url_string(db, url, data):
     return o
 
 def from_db_url(db, url):
-        data = urlopen(url).read()
+        data = urlopen(url, None, 5).read()
         #_debug('got data: %s' % repr(data))
         return _from_db_url_string(db, url, data)
 
