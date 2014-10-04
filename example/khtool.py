@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Sat Oct  4 13:21:18 2014 mstenber
-# Edit time:     6 min
+# Last modified: Sat Oct  4 13:46:00 2014 mstenber
+# Edit time:     10 min
 #
 """
 
@@ -45,6 +45,10 @@ if not args.keys:
     for k in sorted(db.keys()):
         _dump_object(k)
 else:
+    did_set = [False]
+    def _f(**kwargs):
+        did_set[0] = True
+    db.object_changed.connect(_f)
     for key in args.keys:
         l = key.split('=', 1)
         if len(l) > 1:
@@ -61,4 +65,6 @@ else:
                 _dump_one(*l)
             else:
                 _dump_object(k)
-
+    if did_set[0]:
+        # Wait for the change to propagate..
+        sync.request_handled.wait()
