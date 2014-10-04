@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sat Oct  4 13:17:32 2014 mstenber
-# Edit time:     70 min
+# Last modified: Sat Oct  4 13:57:33 2014 mstenber
+# Edit time:     77 min
 #
 """
 
@@ -76,10 +76,12 @@ class SyncReceiver(_socketserver.StreamRequestHandler):
                 if not self.server.db.exists(d[1]):
                     self.server.db.add(d[1], by=BY)
             elif d[0] == 'remove':
-                self.server.db.remove(d[1], by=BY)
+                if self.server.db.exists(d[1]):
+                    self.server.db.remove(d[1], by=BY)
             elif d[0] == 'set':
                 (n, k, v, when) = d[1:]
-                self.server.db.get(n).set(k, v, by=BY, now=when)
+                if self.server.db.exists(n):
+                    self.server.db.get(n).set(k, v, by=BY, now=when)
             elif d[0] == 'sync_end':
                 in_sync()
             else:
@@ -117,13 +119,10 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
         for k, (v, when, by) in o.items():
             cb('set', o.name, k, v, when)
     def db_object_added(self, o, by):
-        if by == BY: return # avoid recursion
         self.produce_updates(o, self.send_update)
     def db_object_changed(self, o, key, by, at, old, new):
-        if by == BY: return # avoid recursion
         self.send_update('set', o.name, key, new, at)
     def db_object_removed(self, o, by):
-        if by == BY: return # avoid recursion
         self.send_update('remove', o.name)
     def send_update(self, *args):
         # Inefficient, but makes life much simpler
