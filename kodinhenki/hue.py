@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Sat Oct  4 13:39:50 2014 mstenber
-# Edit time:     100 min
+# Last modified: Sat Oct  4 17:40:34 2014 mstenber
+# Edit time:     102 min
 #
 """
 
@@ -60,7 +60,7 @@ class HueBulb(kodinhenki.db.Object):
 class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     # How long do we believe in the 'current' timestamp?
     # (in seconds)
-    light_check_interval = 60
+    light_check_interval = 30
 
     # Update set of available lights dynamically (if not,
     # no need to re-create bridge object every now and then)
