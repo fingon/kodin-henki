@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:25:26 2014 mstenber
-# Last modified: Wed Oct  1 15:38:52 2014 mstenber
-# Edit time:     13 min
+# Last modified: Sat Oct  4 11:53:26 2014 mstenber
+# Edit time:     14 min
 #
 """
 
@@ -30,8 +30,9 @@ import os
 def _start_reader_thread(command, callback, autostart=False):
     """ Start a process in a new thread which reads lines from the command,
     and calls callback for each line. """
+    state = [True]
     def _reader():
-        while 1:
+        while state[0]:
             p = subprocess.Popen(command,
                                  stdout=subprocess.PIPE, bufsize=1, close_fds=True)
             for line in p.stdout:
@@ -46,7 +47,7 @@ def _start_reader_thread(command, callback, autostart=False):
     t = threading.Thread(target=_reader)
     t.daemon = True
     t.start()
-    return t
+    return (state, t)
 
 class UserActivityMonitor(kodinhenki.db.Object):
     user_active_period = 5 # in seconds
@@ -70,9 +71,13 @@ class UserActivityMonitor(kodinhenki.db.Object):
                                              '-i', 'echo "0"',
                                              '-R', 'echo "1"'],
                                             _handle_state)
+    def stop(self):
+        self._thread[0][0] = False
+        os.system('killall -9 sleepwatcher')
+        # Other subprocesses will restart sleepwatcher, eventually..
     def __del__(self):
         # TBD - how to get rid of the subprocess in self._thread
-        pass
+        self.stop()
 
 def start(name, db=None):
     db = db or kodinhenki.db.get_database()
