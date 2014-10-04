@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Sat Oct  4 12:50:58 2014 mstenber
+# Last modified: Sat Oct  4 14:17:16 2014 mstenber
 # Edit time:     6 min
 #
 """
@@ -30,12 +30,16 @@ import kodinhenki.wemo as wemo
 import kodinhenki.sync as sync
 import kodinhenki.updater as updater
 
-# Start database (implicitly on the hardcoded port + any ip)
-sync.start_server()
+def start():
+    # Start database (implicitly on the hardcoded port + any ip)
+    sync.start_server()
 
-# Start the devices
-updater.add(hue.get(ip='192.168.44.10'))
-updater.add(wemo.get(remote_ip='192.168.44.254',
-                     discovery_port=54321,
-                     event_port=8989))
+    # Start the devices
+    updater.add(hue.get(ip='192.168.44.10'))
+    updater.add(wemo.get(remote_ip='192.168.44.254',
+                         discovery_port=54321,
+                         event_port=8989))
+
+if __name__ == '__main__':
+    start()
 

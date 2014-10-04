@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Mon Sep 22 18:04:27 2014 mstenber
-# Edit time:     5 min
+# Last modified: Sat Oct  4 14:48:49 2014 mstenber
+# Edit time:     8 min
 #
 """
 
@@ -17,23 +17,22 @@ idle on the computer + what's going on with the projector software.
 
 """
 
-import homeassistant.remote as remote
-import configparser
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
-config = configparser.ConfigParser()
-config.read('poro.conf')
+import kodinhenki as kh
+import kodinhenki.process as process
+import kodinhenki.user_active as user_active
+import kodinhenki.sync as sync
+import os
 
-password = config.get('http', 'api_password')
-remote_api = remote.API('192.168.42.2', password)
+ip = os.environ.get('KHIP', '192.168.42.1')
+db = kh.get_database()
+sync.start_client(db, (ip, kh.PORT))
+process.start({'process.xbmc': 'XBMC', 'process.emacs': 'Emacs.app'})
+user_active.start('user_active.poro')
 
-hass = remote.HomeAssistant(remote_api)
-
-import homeassistant.components.process as process
-processes = dict(config.items('process'))
-process.setup(hass, processes)
-
-import homeassistant.components.user_active as ua
-ua.setup(hass, 'poro')
+# XXX - do clever things with set_volume, itunes_pause, etc..
 
 def _monitor_off():
     os.system('pmset displaysleepnow')
@@ -43,8 +42,3 @@ def _set_volume(n):
 
 def _itunes_pause():
     os.system('osascript "/Users/mstenber/Library/Scripts/itunes pause.scpt"')
-
-
-
-hass.start()
-hass.block_till_stopped()
