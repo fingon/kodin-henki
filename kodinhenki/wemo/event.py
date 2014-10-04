@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Sat Oct  4 17:02:07 2014 mstenber
-# Edit time:     81 min
+# Last modified: Sat Oct  4 17:11:24 2014 mstenber
+# Edit time:     82 min
 #
 """
 
@@ -78,7 +78,8 @@ class EventHandler(_httpserver.BaseHTTPRequestHandler):
             else:
                 raise AssertionError('Weird state: %s' % state)
         self.send_response(200, 'OK')
-        received(ip=ip, state=state)
+        if state is not None:
+            received(ip=ip, state=state)
         _debug(' done')
 
 class EventServer(_httpserver.HTTPServer):
