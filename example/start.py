@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat Oct  4 15:32:19 2014 mstenber
-# Edit time:     154 min
+# Last modified: Sat Oct  4 15:47:45 2014 mstenber
+# Edit time:     162 min
 #
 """
 
@@ -149,6 +149,14 @@ class TimeoutState(HomeState):
         # n/a here, as this runs on cer
         pass
 
+class NightState(HomeState):
+    within = 3600 * 3
+    sensor = LB
+    def update_lights(self):
+        # We _don't_ want to change light state when the lights have
+        # been most recently manipulated via Hue Tap!
+        pass
+
 def _most_recent(e, *el):
     c = _last_changed(e)
     _debug('_most_recent for %s: %s' % (e, c))
@@ -174,9 +182,10 @@ class Home(kh.Object, updater.Updated):
         xbmc = db.get_if_exists('process.xbmc')
         st = xbmc and xbmc.get_defaulted('on')
         if st: return ProjectorState
-        _sources = (WM, IP)
+        _sources = (WM, IP, LB)
         if _most_recent(IP, *_sources): return ComputerState
         if _most_recent(WM, *_sources): return MobileState
+        if _most_recent(LB, *_sources): return NightState
     def next_update_in_seconds(self):
         return 1 # update once a second
     def update(self, *unused):
