@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat Oct  4 15:19:04 2014 mstenber
-# Edit time:     149 min
+# Last modified: Sat Oct  4 15:32:19 2014 mstenber
+# Edit time:     154 min
 #
 """
 
@@ -78,8 +78,7 @@ def _last_changed(e):
             return True
     if not e in _seen_on:
         return
-    if st:
-        return o.get_changed('on') - delay
+    return o.get_changed('on') - delay
 
 def _changed_within(e, x):
     c = _last_changed(e)
