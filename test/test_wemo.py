@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Wed Oct  1 15:53:37 2014 mstenber
-# Edit time:     51 min
+# Last modified: Sat Oct  4 13:06:20 2014 mstenber
+# Edit time:     56 min
 #
 """
 
@@ -35,15 +35,12 @@ def test_wemo(caplog):
     if caplog: caplog.setLevel(logging.DEBUG)
     db = kodinhenki.get_database()
     w = wemo.get(db)
-    s_device_seen = threading.Semaphore(0)
-    s_event = threading.Semaphore(0)
     device_seen = Mock()
     discover.device_seen.connect(device_seen)
     r = event.start_ipv4_receiver(port=8989, remote_ip='1.2.3.4')
     switch = [None]
     def _event_received(**kwargs):
         print('event.received', kwargs)
-        s_event.release()
     event.received.connect(_event_received)
     def _event_subscribed(**kwargs):
         print('event.subscribed', kwargs)
@@ -62,23 +59,15 @@ def test_wemo(caplog):
         if isinstance(o, device.WemoSwitch):
             switch[0] = o
     device.device_added.connect(_device_added)
-    def _foo(address, url, **kwargs):
-        #print(urlopen(url).read())
-        s_device_seen.release()
-    discover.device_seen.connect(_foo)
+    def _device_seen(address, url, **kwargs):
+        print('device.seen', address, url)
+    discover.device_seen.connect(_device_seen)
     o = discover.start()
-    def _wait_s(s, t=1, steps=1000):
-        for i in range(steps):
-            if s.acquire(blocking=False):
-                break
-            time.sleep(1.0 * t / steps)
-        else:
-            raise AssertionError("wait condition not met")
-    _wait_s(s_device_seen)
+    assert discover.device_seen.wait(1)
     o.stop()
     assert device_seen.called
     if REALLY_WAIT_EVENT:
-        _wait_s(s_event, t=60)
+        event.subscribed.wait(timeout=60)
         assert switch[0]
         switch = switch[0]
         print('toggling on')
