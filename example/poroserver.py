@@ -7,7 +7,7 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Sat Oct  4 14:48:49 2014 mstenber
+# Last modified: Sat Oct  4 15:18:07 2014 mstenber
 # Edit time:     8 min
 #
 """
@@ -26,11 +26,15 @@ import kodinhenki.user_active as user_active
 import kodinhenki.sync as sync
 import os
 
-ip = os.environ.get('KHIP', '192.168.42.1')
-db = kh.get_database()
-sync.start_client(db, (ip, kh.PORT))
-process.start({'process.xbmc': 'XBMC', 'process.emacs': 'Emacs.app'})
-user_active.start('user_active.poro')
+def start():
+    process.start({'process.xbmc': 'XBMC', 'process.emacs': 'Emacs.app'})
+    user_active.start('user_active.poro')
+
+if __name__ == '__main__':
+    ip = os.environ.get('KHIP', '192.168.42.1')
+    db = kh.get_database()
+    sync.start_client(db, (ip, kh.PORT))
+    start()
 
 # XXX - do clever things with set_volume, itunes_pause, etc..
 

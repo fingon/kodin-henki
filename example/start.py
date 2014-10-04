@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat Oct  4 15:07:03 2014 mstenber
-# Edit time:     148 min
+# Last modified: Sat Oct  4 15:19:04 2014 mstenber
+# Edit time:     149 min
 #
 """
 
@@ -25,12 +25,15 @@ idle or non-idle state and potentially also manipulate their own state (such as 
 
 import os
 import time
+import socket
 
 import logging
 logger = logging.getLogger(__name__)
 _debug = logger.debug
 
 import khserver
+import poroserver
+
 import kodinhenki as kh
 import kodinhenki.user_active as ua
 import kodinhenki.updater as updater
@@ -39,6 +42,8 @@ import kodinhenki.suncalc as suncalc
 khserver.start()
 db = kh.get_database()
 
+if socket.gethostname() == 'poro.lan':
+    poroserver.start()
 
 # activity sources
 IP='user_active.poro'
