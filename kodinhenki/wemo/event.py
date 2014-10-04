@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Sat Oct  4 12:55:33 2014 mstenber
-# Edit time:     64 min
+# Last modified: Sat Oct  4 15:56:26 2014 mstenber
+# Edit time:     65 min
 #
 """
 
@@ -86,7 +86,7 @@ def start_ipv4_receiver(ip=None, port=0, remote_ip=None, **kwargs):
 
 class Subscription(kodinhenki.updater.Updated):
     subscription_valid_until = 0
-    default_seconds = 60
+    default_seconds = 1800
     fails = 0
     def __init__(self, url, receiver):
         self.url = url
