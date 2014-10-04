@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sat Oct  4 12:24:19 2014 mstenber
-# Edit time:     77 min
+# Last modified: Sat Oct  4 12:51:45 2014 mstenber
+# Edit time:     83 min
 #
 """
 
@@ -31,6 +31,9 @@ import kodinhenki.wemo.device
 import kodinhenki.wemo.event as event
 import time
 
+import kodinhenki.compat as compat
+urljoin = compat.get_urllib_parse().urljoin
+
 import logging
 _debug = logging.debug
 _error = logging.error
@@ -44,14 +47,20 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
     devices_valid_for = 3600
 
     event_receiver = None
+    discovery_thread = None
 
-    def __init__(self, name, event_port=None, ip=None, remote_ip=None, *args, **kwargs):
+    def __init__(self, name, discovery_port=None, event_port=None, ip=None, remote_ip=None, *args, **kwargs):
         kodinhenki.db.Object.__init__(self, name, *args, **kwargs)
         self._devices = {}
         discover.device_seen.connect(self.device_seen)
         event.received.connect(self.device_state_event)
         if event_port is not None:
             self.event_receiver = event.start_ipv4_receiver(ip=ip, remote_ip=remote_ip, port=event_port)
+        if discovery_port is not None:
+            self.discovery_thread = discover.start(discovery_port)
+    def __del__(self):
+        if self.discovery_thread:
+            self.discovery_thread.stop()
     def on_add_to_db(self, db):
         db.object_changed.connect(self.db_state_changed)
     def on_remove_from_db(self, db):
@@ -91,12 +100,14 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
         now = time.time()
         # Send new discover messages if need be
         if now - self.last_discovery > self.discover_every:
+            _debug('sending discover')
             send_discover()
             self.last_discovery = now
 
         # Filter out devices that have not been seen in awhile
         for url, d in list(self._devices.items()):
             if d['last_seen'] < now - self.devices_valid_for:
-                 del self._devices[url]
+                _debug('getting rid of %s - too historic' % repr(d))
+                del self._devices[url]
 
 get = kodinhenki.db.singleton_object_factory(MAIN_NAME, WeMo)
