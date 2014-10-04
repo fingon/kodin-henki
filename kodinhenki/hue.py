@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Sat Oct  4 13:28:01 2014 mstenber
-# Edit time:     97 min
+# Last modified: Sat Oct  4 13:39:50 2014 mstenber
+# Edit time:     100 min
 #
 """
 
@@ -76,7 +76,7 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     def bulb_changed(self, o, key, by, at, old, new):
         if not (key == 'on' and by != BY_US and o.name.startswith(MAIN_NAME)):
             return
-        _debug('setting light state', o.name, new)
+        _debug('setting light state %s=%s' % (o.name, new))
         lo = o.get_light_object()
         lo.on = new
         self.mark_dirty()
