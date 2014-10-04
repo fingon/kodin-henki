@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Wed Oct  1 15:39:07 2014 mstenber
+# Last modified: Sat Oct  4 12:25:19 2014 mstenber
 # Edit time:     86 min
 #
 """
@@ -113,7 +113,8 @@ class Database:
 
 
 def singleton_object_factory(name, cls):
-    def _f(db, *args, **kwargs):
+    def _f(db=None, *args, **kwargs):
+        db = db or get_database()
         if db.exists(name): return db.get(name)
         o = cls(name, *args, **kwargs)
         db.add_object(o)
