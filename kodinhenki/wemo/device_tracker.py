@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Wed Oct  1 13:51:38 2014 mstenber
-# Edit time:     73 min
+# Last modified: Sat Oct  4 12:24:19 2014 mstenber
+# Edit time:     77 min
 #
 """
 
@@ -24,11 +24,11 @@ root 'WeMo' object for the kodinhenki database as well.
 MAIN_NAME='wemo'
 
 import kodinhenki.db
-import kodinhenki.updater
+import kodinhenki.updater as updater
 import kodinhenki.util
-import kodinhenki.wemo.discover
+import kodinhenki.wemo.discover as discover
 import kodinhenki.wemo.device
-import kodinhenki.wemo.event
+import kodinhenki.wemo.event as event
 import time
 
 import logging
@@ -37,17 +37,21 @@ _error = logging.error
 
 send_discover = kodinhenki.util.Signal()
 
-class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
+class WeMo(kodinhenki.db.Object, updater.Updated):
     last_discovery = 0
 
     discover_every = 900
     devices_valid_for = 3600
 
-    def __init__(self, *args, **kwargs):
-        kodinhenki.db.Object.__init__(self, *args, **kwargs)
+    event_receiver = None
+
+    def __init__(self, name, event_port=None, ip=None, remote_ip=None, *args, **kwargs):
+        kodinhenki.db.Object.__init__(self, name, *args, **kwargs)
         self._devices = {}
-        kodinhenki.wemo.discover.device_seen.connect(self.device_seen)
-        kodinhenki.wemo.event.received.connect(self.device_state_event)
+        discover.device_seen.connect(self.device_seen)
+        event.received.connect(self.device_state_event)
+        if event_port is not None:
+            self.event_receiver = event.start_ipv4_receiver(ip=ip, remote_ip=remote_ip, port=event_port)
     def on_add_to_db(self, db):
         db.object_changed.connect(self.db_state_changed)
     def on_remove_from_db(self, db):
@@ -72,7 +76,12 @@ class WeMo(kodinhenki.db.Object, kodinhenki.updater.Updated):
 
     def probe(self, url):
         db = self.get_database()
-        return kodinhenki.wemo.device.from_db_url(db, url)
+        o = kodinhenki.wemo.device.from_db_url(db, url)
+        if self.event_receiver is not None:
+            url = urljoin(o.url, o.services['basicevent'].event_sub_url)
+            s = event.Subscription(url, self.event_receiver)
+            updater.add(s)
+        return o
 
     # Updated interface
     def next_update_in_seconds(self):
