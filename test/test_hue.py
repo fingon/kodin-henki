@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.4
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 #
@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 16:19:15 2014 mstenber
-# Last modified: Wed Oct  1 15:54:26 2014 mstenber
-# Edit time:     21 min
+# Last modified: Sat Oct  4 13:37:07 2014 mstenber
+# Edit time:     29 min
 #
 """
 
@@ -19,16 +19,17 @@ Test code for Hue module
 """
 
 
-from mock import Mock
+from mock import Mock, patch
 import kodinhenki.db
-import kodinhenki.hue
+import kodinhenki.hue as hue
+import time
 
-def test_hue():
+@patch('kodinhenki.hue.phue')
+def test_hue(*args):
     b = Mock() # bridge instance
 
     # fake phue
-    tphue = Mock()
-    kodinhenki.hue.phue = tphue
+    tphue = hue.phue
 
     # fake constructor for Bridge
     tphue.Bridge = Mock(return_value=b)
@@ -44,7 +45,7 @@ def test_hue():
 
     db = kodinhenki.db.Database()
     assert db
-    h = kodinhenki.hue.get(db, ip='1.2.3.4')
+    h = hue.get(db, ip='1.2.3.4')
     assert h
 
     # Run update by hand
@@ -58,7 +59,7 @@ def test_hue():
     l = list(h.get_light_objects())
     assert len(l) >= 3
 
-    assert isinstance(l[0], kodinhenki.hue.HueBulb)
+    assert isinstance(l[0], hue.HueBulb)
     l[0].turn_on()
     assert l[0].get_light_object().on
     l[0].turn_off()
@@ -66,3 +67,21 @@ def test_hue():
 
     assert db.get('hue.lt1')
 
+def test_real_hue(caplog):
+    # Don't run test in real unit tests, as it adds delay and annoying RL
+    # state change
+    if caplog is not None: return
+    db = kodinhenki.db.Database()
+    h = hue.get(db, ip='192.168.44.10')
+    h.update()
+    bed = db.get('hue.Bed')
+    bed.set('on', True)
+    time.sleep(1)
+    bed.set('on', False)
+
+if __name__ == '__main__':
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+
+    test_hue()
+    test_real_hue()
