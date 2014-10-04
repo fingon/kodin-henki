@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Sat Oct  4 12:30:42 2014 mstenber
-# Edit time:     22 min
+# Last modified: Sat Oct  4 12:45:44 2014 mstenber
+# Edit time:     25 min
 #
 """
 
@@ -29,6 +29,10 @@ can remove+readd object.
 """
 
 import threading
+
+import logging
+_debug = logging.debug
+_error = logging.error
 
 class Updated:
     def next_update_in_seconds_changed(self):
@@ -56,13 +60,13 @@ def add(o):
             if _queue.get(o, None) is not t:
                 return
             remove(o)
-        o.update()
-        with _queue_lock:
+            o.update()
             # Do not re-add object if it caused itself to be added..
             if o in _queue:
                 return
             add(o)
     t = threading.Timer(nu, _run)
+    _debug('adding in %s:%s = %s' % (nu, _run, t))
     with _queue_lock:
         assert not o in _queue
         t.start()
@@ -75,6 +79,7 @@ def remove(o):
     assert isinstance(o, Updated)
     with _queue_lock:
         assert o in _queue
+        _debug('canceling %s' % o)
         _queue[o].cancel()
         del _queue[o]
 
