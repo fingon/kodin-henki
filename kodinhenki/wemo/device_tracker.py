@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sat Oct  4 13:26:31 2014 mstenber
-# Edit time:     84 min
+# Last modified: Sat Oct  4 16:03:38 2014 mstenber
+# Edit time:     90 min
 #
 """
 
@@ -36,8 +36,9 @@ import kodinhenki.compat as compat
 urljoin = compat.get_urllib_parse().urljoin
 
 import logging
-_debug = logging.debug
-_error = logging.error
+_logger = logging.getLogger('kh.wemo.device_tracker')
+_debug = _logger.debug
+_error = _logger.error
 
 send_discover = kodinhenki.util.Signal()
 
@@ -80,11 +81,11 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
         if not url in self._devices:
             o = self.probe(url)
             if o:
-                self._devices[url] = {'last_seen': 0, 'o': o}
-        else:
-            self._devices[url]['last_seen'] = time.time()
+                self._devices[url] = {'o': o}
+        self._devices[url]['last_seen'] = time.time()
 
     def probe(self, url):
+        _debug('probing new url: %s' % url)
         db = self.get_database()
         o = kodinhenki.wemo.device.from_db_url(db, url)
         if self.event_receiver is not None:
@@ -107,7 +108,7 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
 
         # Filter out devices that have not been seen in awhile
         for url, d in list(self._devices.items()):
-            if d['last_seen'] < now - self.devices_valid_for:
+            if d['last_seen'] < (now - self.devices_valid_for):
                 _debug('getting rid of %s - too historic' % repr(d))
                 del self._devices[url]
 

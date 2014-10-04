@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Sat Oct  4 15:56:26 2014 mstenber
-# Edit time:     65 min
+# Last modified: Sat Oct  4 16:02:00 2014 mstenber
+# Edit time:     66 min
 #
 """
 
@@ -36,8 +36,9 @@ import threading
 from xml.dom.minidom import parseString
 
 import logging
-_debug = logging.debug
-_error = logging.error
+_logger = logging.getLogger('kh.wemo.event')
+_debug = _logger.debug
+_error = _logger.error
 
 
 class CustomMethodRequest(_request.Request):
