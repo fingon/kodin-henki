@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Sat Oct  4 14:17:16 2014 mstenber
-# Edit time:     6 min
+# Last modified: Sat Oct  4 16:27:44 2014 mstenber
+# Edit time:     7 min
 #
 """
 
@@ -23,7 +23,7 @@ remotely.
 """
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(message)s')
 
 import kodinhenki.hue as hue
 import kodinhenki.wemo as wemo
