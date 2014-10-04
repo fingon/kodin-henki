@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 16:19:15 2014 mstenber
-# Last modified: Sat Oct  4 13:37:07 2014 mstenber
-# Edit time:     29 min
+# Last modified: Sat Oct  4 14:13:29 2014 mstenber
+# Edit time:     30 min
 #
 """
 
@@ -84,4 +84,4 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
     test_hue()
-    test_real_hue()
+    test_real_hue(None)
