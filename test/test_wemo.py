@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Sat Oct  4 13:06:20 2014 mstenber
-# Edit time:     56 min
+# Last modified: Sat Oct  4 13:29:15 2014 mstenber
+# Edit time:     57 min
 #
 """
 
@@ -28,8 +28,6 @@ import logging
 
 import kodinhenki.compat as compat
 urljoin = compat.get_urllib_parse().urljoin
-
-REALLY_WAIT_EVENT=False
 
 def test_wemo(caplog):
     if caplog: caplog.setLevel(logging.DEBUG)
@@ -66,7 +64,7 @@ def test_wemo(caplog):
     assert discover.device_seen.wait(1)
     o.stop()
     assert device_seen.called
-    if REALLY_WAIT_EVENT:
+    if caplog is None:
         event.subscribed.wait(timeout=60)
         assert switch[0]
         switch = switch[0]
@@ -80,5 +78,4 @@ def test_wemo(caplog):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    REALLY_WAIT_EVENT = True
     test_wemo(None)
