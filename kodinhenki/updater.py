@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Sat Oct  4 14:36:11 2014 mstenber
-# Edit time:     27 min
+# Last modified: Sat Oct  4 15:36:54 2014 mstenber
+# Edit time:     31 min
 #
 """
 
@@ -53,6 +53,8 @@ _queue_lock = threading.RLock()
 def add(o):
     assert isinstance(o, Updated)
     nu = o.next_update_in_seconds()
+    if nu is None:
+        return
     if nu < 0:
         nu = 0
     def _run():
@@ -60,11 +62,12 @@ def add(o):
             # If the object somehow disappeared/changed in queue, do nothing
             if _queue.get(o, None) is not t:
                 return
-            remove(o)
-            o.update()
-            # Do not re-add object if it caused itself to be added..
-            if o in _queue:
+        o.update()
+        with _queue_lock:
+            # If object removed itself, do not re-add
+            if _queue.get(o, None) is not t:
                 return
+            remove(o)
             add(o)
     t = threading.Timer(nu, _run)
     _debug('adding in %s:%s = %s' % (nu, _run, t))
