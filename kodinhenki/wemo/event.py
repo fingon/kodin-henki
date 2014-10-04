@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Sat Oct  4 16:02:00 2014 mstenber
-# Edit time:     66 min
+# Last modified: Sat Oct  4 16:45:35 2014 mstenber
+# Edit time:     78 min
 #
 """
 
@@ -58,7 +58,12 @@ class EventHandler(_httpserver.BaseHTTPRequestHandler):
         _debug(' client_address:%s' % repr(self.client_address))
         (ip, port) = self.client_address
         _debug(' headers:%s' % repr(self.headers))
-        data = self.rfile.read()
+        lines = []
+        for line in self.rfile:
+            if not line.strip():
+                break
+            lines.append(line)
+        data = b''.join(lines)
         _debug(' data:%s' % repr(data))
         doc = parseString(data)
         # XXX - if we wanted to be generic, we could do magic here.
@@ -67,19 +72,25 @@ class EventHandler(_httpserver.BaseHTTPRequestHandler):
         state = kodinhenki.wemo.device._wemo_string(doc, 'BinaryState', None)
         if state is not None:
             if state == '0':
-                received(ip=ip, state=False)
+                state=False
             elif state == '1':
-                received(ip=ip, state=True)
+                state=True
             else:
                 raise AssertionError('Weird state: %s' % state)
-        self.send_response(200)
+        self.send_response(200, 'OK')
+        received(ip=ip, state=state)
+        _debug(' done')
+
+class EventServer(_httpserver.HTTPServer):
+    def address_string(self):
+        return self.client_address[0]
 
 def start_ipv4_receiver(ip=None, port=0, remote_ip=None, **kwargs):
     if not ip:
         assert remote_ip
         ip = kodinhenki.util.get_ipv4_address(remote_ip=remote_ip)
         assert ip
-    server = _httpserver.HTTPServer((ip, port), EventHandler)
+    server = EventServer((ip, port), EventHandler)
     st = threading.Thread(target=server.serve_forever)
     st.daemon = True
     st.start()
