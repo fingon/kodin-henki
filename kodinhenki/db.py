@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Sat Oct  4 12:25:19 2014 mstenber
-# Edit time:     86 min
+# Last modified: Sat Oct  4 13:18:09 2014 mstenber
+# Edit time:     91 min
 #
 """
 
@@ -66,6 +66,8 @@ class Object:
         return self._state[key][1]
     def get_database(self):
         return self._db
+    def keys(self):
+        return self._state.keys()
     def items(self):
         return self._state.items()
     def set(self, key, value, by=None, now=None):
@@ -100,6 +102,8 @@ class Database:
         return name in self._objects
     def get(self, name):
         return self._objects[name]
+    def keys(self):
+        return self._objects.keys()
     def items(self):
         return self._objects.items()
     def remove(self, name, by=None):
