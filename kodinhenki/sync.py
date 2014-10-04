@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Wed Oct  1 15:48:04 2014 mstenber
-# Edit time:     67 min
+# Last modified: Sat Oct  4 12:19:15 2014 mstenber
+# Edit time:     68 min
 #
 """
 
@@ -37,6 +37,7 @@ where:
  cmd = sync_end ( start is implicit)
 """
 
+import kodinhenki as kh
 import kodinhenki.db as db
 from kodinhenki.util import Signal
 
@@ -134,7 +135,8 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
         r.wfile.write(b)
 
 
-def start_server(db, ip='', port=0):
+def start_server(db=None, ip='', port=kh.PORT):
+    db = db or kh.get_database()
     server = SyncServer(db, False, (ip, port), SyncReceiver)
     st = threading.Thread(target=server.serve_forever)
     st.daemon = True

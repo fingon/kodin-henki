@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 14:08:10 2014 mstenber
-# Last modified: Wed Oct  1 14:46:07 2014 mstenber
+# Last modified: Sat Oct  4 12:22:07 2014 mstenber
 # Edit time:     8 min
 #
 """
@@ -44,7 +44,7 @@ def test_sync():
 
     sync.request_handled.connect(_f)
 
-    s1 = sync.start_server(db1)
+    s1 = sync.start_server(db1, port=0)
 
     o1 = db1.add('foo')
     o1.set('bar', 'baz')
