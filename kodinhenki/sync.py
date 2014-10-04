@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sat Oct  4 13:57:33 2014 mstenber
-# Edit time:     77 min
+# Last modified: Sat Oct  4 15:02:45 2014 mstenber
+# Edit time:     79 min
 #
 """
 
@@ -92,7 +92,11 @@ class SyncReceiver(_socketserver.StreamRequestHandler):
         _debug('finished %s' % self)
 
 class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
+    # .. for the socketserver superclasses ..
+    allow_reuse_address = True
     daemon_threads = True
+
+    # .. own configuration ..
     update_on_connect = True
     def __init__(self, db, client, *args, **kwargs):
         self.db = db
