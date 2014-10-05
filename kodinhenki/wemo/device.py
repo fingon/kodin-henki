@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Sat Oct  4 17:01:56 2014 mstenber
+# Last modified: Sun Oct  5 02:57:42 2014 mstenber
 # Edit time:     38 min
 #
 """
@@ -42,9 +42,9 @@ device_added = Signal()
 
 class WemoBase(kodinhenki.db.Object):
     def __init__(self, url, services, **kwargs):
-        self.url = url
         p = _parse.urlparse(url)
-        self.ip = p.netloc.split(':')[0]
+        kwargs['ip'] = p.netloc.split(':')[0]
+        self.url = url
         self.services = services
         kodinhenki.db.Object.__init__(self, **kwargs)
     def is_on(self):

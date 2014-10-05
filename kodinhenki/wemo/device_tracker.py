@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sat Oct  4 16:03:38 2014 mstenber
-# Edit time:     90 min
+# Last modified: Sun Oct  5 03:00:16 2014 mstenber
+# Edit time:     98 min
 #
 """
 
@@ -75,23 +75,25 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
     def device_state_event(self, ip, state):
         for url, d in self._devices.items():
             o = d['o']
-            if o.ip == ip:
+            if o.get('ip') == ip:
                 o.set('on', state, by=BY_US)
+                return
+        _debug('unknown device - ip=%s' % ip)
     def device_seen(self, url, **kwargs):
-        if not url in self._devices:
-            o = self.probe(url)
-            if o:
-                self._devices[url] = {'o': o}
+        o = self._devices.get(url, None) or self.probe(url)
+        if not o: return
         self._devices[url]['last_seen'] = time.time()
-
+        _debug('marking seen: %s' % o)
     def probe(self, url):
         _debug('probing new url: %s' % url)
         db = self.get_database()
         o = kodinhenki.wemo.device.from_db_url(db, url)
+        if not o: return
         if self.event_receiver is not None:
-            url = urljoin(o.url, o.services['basicevent'].event_sub_url)
-            s = event.Subscription(url, self.event_receiver)
+            full_url = urljoin(url, o.services['basicevent'].event_sub_url)
+            s = event.Subscription(full_url, self.event_receiver)
             updater.add(s)
+        self._devices[url] = {'o': o}
         return o
 
     # Updated interface
