@@ -67,7 +67,11 @@ class Action:
         'Content-Type': 'text/xml'}
         _debug('url:%s - headers:%s - data:%s' % (self.url, headers, data))
         req = urllib_request.Request(self.url, data.encode('utf-8'), headers)
-        data = urlopen(req, None, 5).read()
+        try:
+            data = urlopen(req, None, 5).read()
+        except socket.timeout:
+            _error('call to %s timed out' % url)
+            return
         doc = parseString(data)
         # Doc contains Envelope + Body + X + then inside that, key = value
         bl = doc.getElementsByTagNameNS(soap_ns, 'Body')

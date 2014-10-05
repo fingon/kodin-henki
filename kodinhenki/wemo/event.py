@@ -116,8 +116,11 @@ class Subscription(kodinhenki.updater.Updated):
                    'NT': 'upnp:event',
                    }
         req = CustomMethodRequest('SUBSCRIBE', self.url, headers=headers)
-        o = urlopen(req, None, 5)
-        data = o.read()
+        try:
+            o = urlopen(req, None, 5)
+            data = o.read()
+        except socket.timeout:
+            data = b''
         info = dict(o.info().items()) # = header as a dict
         for k, v in info.items():
             if k.lower() == 'timeout':
