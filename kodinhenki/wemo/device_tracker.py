@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sun Oct  5 03:00:16 2014 mstenber
-# Edit time:     98 min
+# Last modified: Sun Oct  5 09:50:05 2014 mstenber
+# Edit time:     102 min
 #
 """
 
@@ -60,6 +60,7 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
             self.event_receiver = event.start_ipv4_receiver(ip=ip, remote_ip=remote_ip, port=event_port)
         if discovery_port is not None:
             self.discovery_thread = discover.start(discovery_port)
+            send_discover.connect(self.discovery_thread.send)
     def __del__(self):
         if self.discovery_thread:
             self.discovery_thread.stop()
