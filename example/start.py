@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Oct  6 15:46:58 2014 mstenber
-# Edit time:     181 min
+# Last modified: Mon Oct  6 15:51:37 2014 mstenber
+# Edit time:     185 min
 #
 """
 
@@ -26,6 +26,7 @@ idle or non-idle state and potentially also manipulate their own state (such as 
 import os
 import time
 import socket
+import datetime
 
 import logging
 logger = logging.getLogger(__name__)
@@ -182,9 +183,15 @@ class Home(kh.Object, updater.Updated):
         xbmc = db.get_if_exists('process.xbmc')
         st = xbmc and xbmc.get_defaulted('on')
         if st: return ProjectorState
-        if _changed_within(NightState.sensor,
-                           NightState.within): return NightState
-        states = [ComputerState, MobileState]
+
+        # XXX - this is temporary check because it seems that
+        # user_active _and_ wemo events are sporadically wrong, and I
+        # do not want light show at night :-p Rather leave control
+        # manual, at nighttime, for now.
+        if _changed_within(NightState.sensor, NightState.within) and datetime.datetime.now().hour < 10:
+            return NightState
+
+        states = [ComputerState, MobileState, NightState]
         sensors = [state.sensor for state in states]
         for state in states:
             if _most_recent(state.sensor, *sensors):
