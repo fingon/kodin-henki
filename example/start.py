@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Oct  6 15:42:20 2014 mstenber
-# Edit time:     176 min
+# Last modified: Mon Oct  6 15:46:58 2014 mstenber
+# Edit time:     181 min
 #
 """
 
@@ -184,9 +184,11 @@ class Home(kh.Object, updater.Updated):
         if st: return ProjectorState
         if _changed_within(NightState.sensor,
                            NightState.within): return NightState
-        _sources = (WM, IP)
-        if _most_recent(IP, *_sources): return ComputerState
-        if _most_recent(WM, *_sources): return MobileState
+        states = [ComputerState, MobileState]
+        sensors = [state.sensor for state in states]
+        for state in states:
+            if _most_recent(state.sensor, *sensors):
+                return state
     def next_update_in_seconds(self):
         return 1 # update once a second
     def update(self, *unused):
