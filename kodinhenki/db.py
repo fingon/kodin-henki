@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 14:35:55 2014 mstenber
-# Last modified: Sat Oct  4 14:36:02 2014 mstenber
-# Edit time:     94 min
+# Last modified: Tue Oct  7 11:32:04 2014 mstenber
+# Edit time:     95 min
 #
 """
 
@@ -72,12 +72,12 @@ class Object:
     def items(self):
         return self._state.items()
     def set(self, key, value, by=None, now=None):
-        _debug('set %s.%s=%s %s' % (self.name, key, value, by))
         # Spurious set
         ost = self._state.get(key, None)
         if ost and ost[0] == value:
-            _debug(' .. spurious, no change')
+            _debug('set %s.%s=%s %s [spurious]' % (self.name, key, value, by))
             return
+        _debug('set %s.%s=%s %s' % (self.name, key, value, by))
         if not now:
             now = time.time()
         st = (value, now, by)
