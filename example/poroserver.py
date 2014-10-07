@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Sat Oct  4 15:18:07 2014 mstenber
-# Edit time:     8 min
+# Last modified: Tue Oct  7 11:10:54 2014 mstenber
+# Edit time:     11 min
 #
 """
 
@@ -26,9 +26,34 @@ import kodinhenki.user_active as user_active
 import kodinhenki.sync as sync
 import os
 
+def _monitor_off():
+    os.system('pmset displaysleepnow')
+
+def _itunes_pause():
+    os.system('osascript "/Users/mstenber/Library/Scripts/itunes pause.scpt"')
+
+def _set_volume(n):
+    os.system('osascript -e "set Volume %d"' % n)
+
 def start():
     process.start({'process.xbmc': 'XBMC', 'process.emacs': 'Emacs.app'})
     user_active.start('user_active.poro')
+    def _f(o, key, old, new, **kwargs):
+        if o.name == 'home' and key == 'state_name':
+            if old == 'ProjectorState':
+                _set_volume(5)
+            if new == 'NightState':
+                _monitor_off()
+                #_itunes_pause()
+                # Hmm. Good idea? Maybe not, if listening to stuff on bed.
+            elif new == 'TimeoutState':
+                _itunes_pause()
+            elif new == 'ProjectorState':
+                # Further away from computer -> more volume
+                _set_volume(10)
+                _itunes_pause()
+
+    kh.get_database().object_changed.connect(_f)
 
 if __name__ == '__main__':
     ip = os.environ.get('KHIP', '192.168.42.1')
@@ -38,11 +63,3 @@ if __name__ == '__main__':
 
 # XXX - do clever things with set_volume, itunes_pause, etc..
 
-def _monitor_off():
-    os.system('pmset displaysleepnow')
-
-def _set_volume(n):
-    os.system('osascript -e "set Volume %d"' % n)
-
-def _itunes_pause():
-    os.system('osascript "/Users/mstenber/Library/Scripts/itunes pause.scpt"')

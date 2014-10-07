@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Oct  6 15:51:37 2014 mstenber
-# Edit time:     185 min
+# Last modified: Mon Oct  6 15:57:16 2014 mstenber
+# Edit time:     187 min
 #
 """
 
@@ -135,6 +135,7 @@ class MobileState(HomeState):
     def enter(self):
         #_monitor_off() # significant power hog, waiting 3 hours not sensible
         # .. it's just 10 minutes. who cares. more annoying to have it resync
+        # n/a also here, as this may run on cer
         pass
 
 class ComputerState(HomeState):
@@ -147,7 +148,7 @@ class TimeoutState(HomeState):
     " This state we enter if one of the others actually times out (Mobile/Computer-). In that case, all we do is just pause itunes if it's running, monitor has timed out long time ago most likely. "
     def enter(self):
         #_itunes_pause()
-        # n/a here, as this runs on cer
+        # n/a here, as this may run on cer
         pass
 
 class NightState(HomeState):
