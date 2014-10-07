@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Sat Oct  4 17:40:34 2014 mstenber
-# Edit time:     102 min
+# Last modified: Tue Oct  7 10:59:31 2014 mstenber
+# Edit time:     111 min
 #
 """
 
@@ -46,9 +46,10 @@ class HueBulb(kodinhenki.db.Object):
         # No explicit locking here, but expected caller to make sure
         # bridge isn't accessed willy-nilly..
         light_name = self.get('light_name')
-        for light in self.get_bridge().get_light_objects():
-            if light.name == light_name:
-                return light
+        d = self.get_bridge().get_light_objects(mode='name')
+        light = d.get(light_name, None)
+        if light:
+            return light
         raise KeyError(light_name)
     def is_on(self):
         return self.get('on')
@@ -97,12 +98,11 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
         return self._lights_dirty_after - time.time()
     def update(self):
         b = self.get_bridge(force=self.dynamically_update_lights)
-        lobs = b.get_light_objects()
+        lobs = b.get_light_objects(mode='name')
         db = self.get_database()
         l = []
-        for light in lobs:
+        for name, light in lobs.items():
             #name = unicode(light.name, 'utf-8')
-            name = light.name
             n = BULB_NAME % (MAIN_NAME, name)
             if not db.exists(n):
                 b = HueBulb(name=n, light_name=name)

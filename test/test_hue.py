@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 16:19:15 2014 mstenber
-# Last modified: Sat Oct  4 14:13:29 2014 mstenber
+# Last modified: Tue Oct  7 11:07:32 2014 mstenber
 # Edit time:     30 min
 #
 """
@@ -40,7 +40,7 @@ def test_hue(*args):
     l2.name = 'lt2'
     l3 = Mock()
     l3.name = 'lt3'
-    b.get_light_objects = Mock(return_value=[l1, l2, l3])
+    b.get_light_objects = Mock(return_value={'lt1': l1, 'lt2': l2, 'lt3': l3})
     assert len(b.get_light_objects()) == 3
 
     db = kodinhenki.db.Database()
