@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Oct  6 15:57:16 2014 mstenber
-# Edit time:     187 min
+# Last modified: Tue Oct  7 11:41:15 2014 mstenber
+# Edit time:     201 min
 #
 """
 
@@ -36,6 +36,7 @@ import khserver
 import poroserver
 
 import kodinhenki as kh
+import kodinhenki.hue as hue
 import kodinhenki.user_active as ua
 import kodinhenki.updater as updater
 import kodinhenki.suncalc as suncalc
@@ -106,11 +107,11 @@ class HomeState:
     def update_lights(self):
         # We're valid in general
         daylight = suncalc.within_zenith()
+        h = {}
         for light in ALL_LIGHTS:
             state = self.get_light_state(daylight, light)
-            o = db.get_if_exists(light)
-            if o:
-                o.set('on', state)
+            h[light] = state
+        return h
     def get_light_state(self, daylight, light):
         # XXX - some override method at some point
         if daylight and light not in DAYLIGHT_LIGHTS:
@@ -192,7 +193,7 @@ class Home(kh.Object, updater.Updated):
         if _changed_within(NightState.sensor, NightState.within) and datetime.datetime.now().hour < 10:
             return NightState
 
-        states = [ComputerState, MobileState, NightState]
+        states = [NightState, ComputerState, MobileState]
         sensors = [state.sensor for state in states]
         for state in states:
             if _most_recent(state.sensor, *sensors):
@@ -209,7 +210,32 @@ class Home(kh.Object, updater.Updated):
             self.state = cls()
             self.state.enter()
             self.set('state_name', cls.__name__)
-        self.state.update_lights()
+        desired_state = self.state.update_lights()
+        if not desired_state:
+            return
+        changed_state = {}
+        for name, state in desired_state.items():
+            o = db.get_if_exists(name)
+            if o:
+                if o.get('on') is not state:
+                    changed_state[o] = state
+        if not changed_state:
+            return
+        _debug('changing state: %s' % repr(changed_state))
+        # XXX - not elegant, but make sure the hue hasn't changed under us..
+        # WeMo notifications should be ~real time, Hue NOT.
+        hue_changed = [False]
+        def _f(name, key, **kwargs):
+            if key == 'on':
+                hue_changed[0] = True
+        db.object_changed.connect(_f)
+        hue.get().update()
+        db.object_changed.disconnect(_f)
+        if hue_changed[0]:
+            return
+        # Ok, Hue state matches what we thought it was -> go onward
+        for o, state in changed_state.items():
+            o.set('on', state)
 
 h = Home('home')
 db.add_object(h)
