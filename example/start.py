@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Tue Oct  7 11:41:15 2014 mstenber
-# Edit time:     201 min
+# Last modified: Wed Oct  8 20:32:51 2014 mstenber
+# Edit time:     210 min
 #
 """
 
@@ -58,9 +58,6 @@ LK='hue.Kitchen'
 LR='hue.Living'
 WT='wemo.WeMo Toilet'
 
-# All lights we control
-ALL_LIGHTS=[LC, LK, LR, LB, WT]
-
 # Which light do we care about when it's daylight?
 DAYLIGHT_LIGHTS=[WT]
 SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
@@ -89,10 +86,11 @@ def _changed_within(e, x):
     return time.time() - x < c
 
 class HomeState:
-    lights = None # lights that are always on
+    lights = [LC, LK, LR, LB, WT] # the lights we control
+    lights_on = None # lights that are always on
     sensor = None # sensor to monitor (see within next)
     within = None # how recently it must have been active to apply
-    overrides = {} # light => (sensor, timeout) mapping
+    lights_conditional = {} # light => (sensor, timeout) mapping
     @classmethod
     def valid(cls):
         if cls.sensor and not _changed_within(cls.sensor, cls.within):
@@ -108,7 +106,7 @@ class HomeState:
         # We're valid in general
         daylight = suncalc.within_zenith()
         h = {}
-        for light in ALL_LIGHTS:
+        for light in self.lights:
             state = self.get_light_state(daylight, light)
             h[light] = state
         return h
@@ -117,22 +115,22 @@ class HomeState:
         if daylight and light not in DAYLIGHT_LIGHTS:
             return False
         # Unconditionally on while in this state
-        if self.lights and light in self.lights:
+        if self.lights_on and light in self.lights_on:
             return True
         # Conditionally on while in this state
-        override = self.overrides.get(light, None)
+        override = self.lights_conditional.get(light, None)
         return override and _changed_within(*override) or False
 
 class ProjectorState(HomeState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
-    overrides = {LC: (WM, 30), WT: (WM, 900)}
+    lights_conditional = {LC: (WM, 30), WT: (WM, 900)}
 
 class MobileState(HomeState):
     " Most recently seen in corridor - could be even outside. "
     within = 3600 * 3 # within 3 hours
-    lights = [LR, LK]
+    lights_on = [LR, LK]
     sensor = WM
-    overrides = {LC: (WM, 300), WT: (WM, 3600)}
+    lights_conditional = {LC: (WM, 300), WT: (WM, 3600)}
     def enter(self):
         #_monitor_off() # significant power hog, waiting 3 hours not sensible
         # .. it's just 10 minutes. who cares. more annoying to have it resync
@@ -143,7 +141,7 @@ class ComputerState(HomeState):
     " Unidle at one of the computers. "
     within = 3600 * 3 # within 3 hours
     sensor = IP
-    lights = [LR, LK]
+    lights_on = [LR, LK]
 
 class TimeoutState(HomeState):
     " This state we enter if one of the others actually times out (Mobile/Computer-). In that case, all we do is just pause itunes if it's running, monitor has timed out long time ago most likely. "
@@ -152,13 +150,11 @@ class TimeoutState(HomeState):
         # n/a here, as this may run on cer
         pass
 
-class NightState(HomeState):
+class NightState(ProjectorState):
     within = 3600 * 8
     sensor = LB
-    def update_lights(self):
-        # We _don't_ want to change light state when the lights have
-        # been most recently manipulated via Hue Tap!
-        pass
+    # _only_ control toilet lightning, based on motion rules
+    lights = [WT]
 
 def _most_recent(e, *el):
     c = _last_changed(e)
@@ -217,7 +213,7 @@ class Home(kh.Object, updater.Updated):
         for name, state in desired_state.items():
             o = db.get_if_exists(name)
             if o:
-                if o.get('on') is not state:
+                if o.get_defaulted('on') is not state:
                     changed_state[o] = state
         if not changed_state:
             return
@@ -225,7 +221,7 @@ class Home(kh.Object, updater.Updated):
         # XXX - not elegant, but make sure the hue hasn't changed under us..
         # WeMo notifications should be ~real time, Hue NOT.
         hue_changed = [False]
-        def _f(name, key, **kwargs):
+        def _f(o, key, **kwargs):
             if key == 'on':
                 hue_changed[0] = True
         db.object_changed.connect(_f)
