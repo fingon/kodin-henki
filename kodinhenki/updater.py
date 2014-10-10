@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Sat Oct  4 15:36:54 2014 mstenber
+# Last modified: Fri Oct 10 15:56:30 2014 mstenber
 # Edit time:     31 min
 #
 """
@@ -62,13 +62,15 @@ def add(o):
             # If the object somehow disappeared/changed in queue, do nothing
             if _queue.get(o, None) is not t:
                 return
-        o.update()
-        with _queue_lock:
-            # If object removed itself, do not re-add
-            if _queue.get(o, None) is not t:
-                return
-            remove(o)
-            add(o)
+        try:
+            o.update()
+        finally:
+            with _queue_lock:
+                # If object removed itself, do not re-add
+                if _queue.get(o, None) is not t:
+                    return
+                remove(o)
+                add(o)
     t = threading.Timer(nu, _run)
     _debug('adding in %s:%s = %s' % (nu, _run, t))
     with _queue_lock:
