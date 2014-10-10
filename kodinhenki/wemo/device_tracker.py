@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sun Oct  5 09:50:05 2014 mstenber
+# Last modified: Thu Oct  9 10:01:02 2014 mstenber
 # Edit time:     102 min
 #
 """
@@ -71,7 +71,9 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
     def db_state_changed(self, o, key, by, at, old, new):
         if not (key == 'on' and by != BY_US and o.name.startswith(MAIN_NAME)):
             return
-        o.set_state(new)
+        if not o.set_state(new):
+            # Do inverse set - back to old value.
+            o.set(key, old, by=BY_US)
 
     def device_state_event(self, ip, state):
         for url, d in self._devices.items():
