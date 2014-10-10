@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Sun Oct  5 02:57:42 2014 mstenber
-# Edit time:     38 min
+# Last modified: Thu Oct  9 10:00:24 2014 mstenber
+# Edit time:     39 min
 #
 """
 
@@ -53,7 +53,7 @@ class WemoBase(kodinhenki.db.Object):
 class WemoSwitch(WemoBase):
     def set_state(self, v):
         s = v and '1' or '0'
-        self.services['basicevent'].SetBinaryState(BinaryState=s)
+        return self.services['basicevent'].SetBinaryState(BinaryState=s)
     def turn_on(self):
         self.set('on', True)
     def turn_off(self):
