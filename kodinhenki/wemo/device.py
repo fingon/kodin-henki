@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Thu Oct  9 10:00:24 2014 mstenber
+# Last modified: Fri Oct 10 20:00:09 2014 mstenber
 # Edit time:     39 min
 #
 """
@@ -22,6 +22,7 @@ Switch, smirk).
 import kodinhenki.db
 import kodinhenki.wemo.service
 from kodinhenki.util import Signal
+import socket
 
 import kodinhenki.compat as compat
 urlopen = compat.get_urllib_request().urlopen
@@ -43,12 +44,17 @@ device_added = Signal()
 class WemoBase(kodinhenki.db.Object):
     def __init__(self, url, services, **kwargs):
         p = _parse.urlparse(url)
-        kwargs['ip'] = p.netloc.split(':')[0]
-        self.url = url
-        self.services = services
+        ip = p.netloc.split(':')[0]
+        kwargs['ip'] = ip
         kodinhenki.db.Object.__init__(self, **kwargs)
+        self.set_url(url)
+        self.set_services(services)
     def is_on(self):
         return self.get('on')
+    def set_services(self, services):
+        self.services = services
+    def set_url(self, url):
+        self.url = url
 
 class WemoSwitch(WemoBase):
     def set_state(self, v):
@@ -104,20 +110,28 @@ def _from_db_url_string(db, url, data):
         assert isinstance(o, cls)
         _debug('%s already existed and is of class %s' % (fname, repr(cls)))
     except KeyError:
-        sol = list(doc.getElementsByTagName('service'))
-        services = list([
+        o = None
+    if o and o.url == url:
+        return o
+    sol = list(doc.getElementsByTagName('service'))
+    services = list([
             kodinhenki.wemo.service.from_url_object(url, o2)
             for o2 in sol])
-        services = dict([(s.service_type.split(':')[-2].lower(), s) for s in services])
-        #_debug('%s enumerated %s => %s' % (name, sol, services))
+    services = dict([(s.service_type.split(':')[-2].lower(), s) for s in services])
+    if o:
+        o.set_url(url)
+        o.set_services(services)
+    else:
         o = cls(name=fname, url=url, services=services)
         db.add_object(o)
         device_added(o=o)
     return o
 
 def from_db_url(db, url):
+    try:
         data = urlopen(url, None, 5).read()
-        #_debug('got data: %s' % repr(data))
-        return _from_db_url_string(db, url, data)
+    except socket.timeout:
+        return
+    return _from_db_url_string(db, url, data)
 
 
