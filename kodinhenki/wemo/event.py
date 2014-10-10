@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Sat Oct  4 17:11:24 2014 mstenber
-# Edit time:     82 min
+# Last modified: Fri Oct 10 15:57:59 2014 mstenber
+# Edit time:     92 min
 #
 """
 
@@ -31,6 +31,7 @@ from kodinhenki.util import Signal
 subscribed = Signal()
 received = Signal()
 
+import socket
 import time
 import threading
 from xml.dom.minidom import parseString
@@ -99,44 +100,62 @@ def start_ipv4_receiver(ip=None, port=0, remote_ip=None, **kwargs):
 
 class Subscription(kodinhenki.updater.Updated):
     subscription_valid_until = 0
-    default_seconds = 60
+    default_seconds = 600
     fails = 0
+    sid = None
     def __init__(self, url, receiver):
         self.url = url
         self.receiver = receiver
     def next_update_in_seconds(self):
         now = time.time()
         return self.subscription_valid_until - now
-    def update(self):
+    def _subscribe(self):
         server_address = self.receiver['server'].server_address
-        _debug('subscribing to %s (and receiving at %s)' % (self.url, server_address))
+        _debug('subscribing to %s (and receiving at %s) - sid:%s' % (self.url, server_address, self.sid))
         (ip, port) = server_address
         headers = {'Timeout': 'Second-%d' % self.default_seconds,
                    'Callback': '<http://%s:%d>' % (ip, port),
                    'NT': 'upnp:event',
                    }
+        if self.sid:
+            headers['SID'] = self.sid
         req = CustomMethodRequest('SUBSCRIBE', self.url, headers=headers)
         try:
             o = urlopen(req, None, 5)
             data = o.read()
+            info = dict(o.info().items()) # = header as a dict
         except socket.timeout:
             data = b''
-        info = dict(o.info().items()) # = header as a dict
+            info = {}
+        result = {}
+        _debug(' %s/%s' % (info, data))
         for k, v in info.items():
-            if k.lower() == 'timeout':
+            kl = k.lower()
+            if kl == 'timeout':
                 SECONDS_PREFIX='second-'
                 if v[:len(SECONDS_PREFIX)].lower() == SECONDS_PREFIX:
                     v = v[len(SECONDS_PREFIX):]
-                    seconds = int(v)
+                    result['seconds'] = int(v)
                     break
-        else:
+            elif kl == 'sid':
+                result['sid'] = v
+        return result
+    def update(self):
+        r = self._subscribe()
+        if 'seconds' in r:
+            if self.sid:
+                self.sid = None
+                r = self._subscribe()
+        if 'seconds' not in r:
             # retry in a while..
             self.fails = self.fails + 1
             self.subscription_valid_until = time.time() + 5 * 2 ** self.fails
             return
+        seconds = r['seconds']
+        sid = r.get('sid')
+        self.sid = sid
         self.fails = 0
-        _debug(' %s/%s' % (info, data))
-        subscribed(url=self.url, seconds=seconds)
+        subscribed(url=self.url, seconds=seconds, sid=sid)
         self.subscription_valid_until = time.time() + seconds - 5
 
 def subscribe(url, receiver):
