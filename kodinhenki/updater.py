@@ -55,8 +55,8 @@ def add(o):
     nu = o.next_update_in_seconds()
     if nu is None:
         return
-    if nu < 0:
-        nu = 0
+    if nu <= 0:
+        nu = 1 
     def _run():
         with _queue_lock:
             # If the object somehow disappeared/changed in queue, do nothing
