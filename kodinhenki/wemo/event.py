@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Fri Oct 10 15:57:59 2014 mstenber
-# Edit time:     92 min
+# Last modified: Fri Oct 10 19:57:54 2014 mstenber
+# Edit time:     94 min
 #
 """
 
@@ -142,10 +142,9 @@ class Subscription(kodinhenki.updater.Updated):
         return result
     def update(self):
         r = self._subscribe()
-        if 'seconds' in r:
-            if self.sid:
-                self.sid = None
-                r = self._subscribe()
+        if 'seconds' not in r and self.sid:
+            self.sid = None
+            r = self._subscribe()
         if 'seconds' not in r:
             # retry in a while..
             self.fails = self.fails + 1
