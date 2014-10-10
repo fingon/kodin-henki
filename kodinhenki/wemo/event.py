@@ -31,7 +31,6 @@ from kodinhenki.util import Signal
 subscribed = Signal()
 received = Signal()
 
-import socket
 import time
 import threading
 from xml.dom.minidom import parseString
@@ -124,7 +123,7 @@ class Subscription(kodinhenki.updater.Updated):
             o = urlopen(req, None, 5)
             data = o.read()
             info = dict(o.info().items()) # = header as a dict
-        except socket.timeout:
+        except:
             data = b''
             info = {}
         result = {}
