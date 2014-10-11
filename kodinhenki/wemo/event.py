@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Fri Oct 10 19:57:54 2014 mstenber
-# Edit time:     94 min
+# Last modified: Sat Oct 11 12:12:43 2014 mstenber
+# Edit time:     102 min
 #
 """
 
@@ -78,6 +78,12 @@ class EventHandler(_httpserver.BaseHTTPRequestHandler):
             else:
                 raise AssertionError('Weird state: %s' % state)
         self.send_response(200, 'OK')
+        self.send_header('Connection', 'close')
+        self.send_header('Content-Length', len(data))
+        self.send_header('Content-Type', 'text/html')
+        self.end_headers()
+        data = b'<html><body>...</body></html>'
+        self.wfile.write(data)
         if state is not None:
             received(ip=ip, state=state)
         _debug(' done')
