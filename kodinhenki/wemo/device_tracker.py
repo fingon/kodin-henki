@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Thu Oct  9 10:01:02 2014 mstenber
-# Edit time:     102 min
+# Last modified: Sat Oct 11 10:17:58 2014 mstenber
+# Edit time:     107 min
 #
 """
 
@@ -96,6 +96,12 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
             full_url = urljoin(url, o.services['basicevent'].event_sub_url)
             s = event.Subscription(full_url, self.event_receiver)
             updater.add(s)
+            # Even if we reuse the object (and we should
+            # have only one device per physical object), re-probing
+            # should not duplicate subscriptions. So kill the subscription.
+            if o._subscription:
+                updater.remove(o._subscription)
+            o._subscription = s
         self._devices[url] = {'o': o}
         return o
 

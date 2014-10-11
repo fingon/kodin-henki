@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Fri Oct 10 20:00:09 2014 mstenber
-# Edit time:     39 min
+# Last modified: Sat Oct 11 10:16:33 2014 mstenber
+# Edit time:     40 min
 #
 """
 
@@ -42,6 +42,7 @@ DEVICE_NAME='wemo.%s'
 device_added = Signal()
 
 class WemoBase(kodinhenki.db.Object):
+    _subscription = None # Event subscription, handled externally
     def __init__(self, url, services, **kwargs):
         p = _parse.urlparse(url)
         ip = p.netloc.split(':')[0]
