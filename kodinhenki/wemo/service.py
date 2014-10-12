@@ -69,8 +69,8 @@ class Action:
         req = urllib_request.Request(self.url, data.encode('utf-8'), headers)
         try:
             data = urlopen(req, None, 5).read()
-        except socket.timeout:
-            _error('call to %s timed out' % url)
+        except:
+            _error('call to %s failed' % url)
             return
         doc = parseString(data)
         # Doc contains Envelope + Body + X + then inside that, key = value
@@ -93,10 +93,13 @@ class Service:
         self.__dict__.update(kwargs)
     def populate(self):
         if self.populated: return
+        nurl = urljoin(self.url, self.scdp)
+        try:
+            data = urlopen(nurl, None, 5).read()
+        except:
+            pass
         self.populated = True
         assert self.scdp
-        nurl = urljoin(self.url, self.scdp)
-        data = urlopen(nurl, None, 5).read()
         #_debug('got sdata: %s' % repr(data))
         doc = parseString(data)
         assert doc

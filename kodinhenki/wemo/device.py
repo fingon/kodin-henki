@@ -131,7 +131,7 @@ def _from_db_url_string(db, url, data):
 def from_db_url(db, url):
     try:
         data = urlopen(url, None, 5).read()
-    except socket.timeout:
+    except:
         return
     return _from_db_url_string(db, url, data)
 
