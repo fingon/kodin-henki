@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 18:14:32 2014 mstenber
-# Last modified: Sat Oct  4 17:01:20 2014 mstenber
+# Last modified: Tue Oct 14 10:28:20 2014 mstenber
 # Edit time:     42 min
 #
 """
@@ -70,7 +70,7 @@ class Action:
         try:
             data = urlopen(req, None, 5).read()
         except:
-            _error('call to %s failed' % url)
+            _error('action call to %s failed' % self.url)
             return
         doc = parseString(data)
         # Doc contains Envelope + Body + X + then inside that, key = value
