@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Tue Oct  7 11:10:54 2014 mstenber
-# Edit time:     11 min
+# Last modified: Tue Oct 14 22:49:51 2014 mstenber
+# Edit time:     12 min
 #
 """
 
@@ -41,7 +41,7 @@ def start():
     def _f(o, key, old, new, **kwargs):
         if o.name == 'home' and key == 'state_name':
             if old == 'ProjectorState':
-                _set_volume(5)
+                _set_volume(3)
             if new == 'NightState':
                 _monitor_off()
                 #_itunes_pause()
