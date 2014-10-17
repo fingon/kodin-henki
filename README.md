@@ -1,11 +1,11 @@
 kodin-henki
 ===========
 
-'Spirit of home' - my home automation project based on Python 2.
+'Spirit of home' - my home automation project based on Python 2/3.
 
 Notably influenced by https://github.com/balloob/home-assistant - however,
-as I am not that keen on Python 3, and some design choices there, I figured
-rolling my own would be easiest (cough).
+as I am not that keen on forcing use of Python 3, and some design choices
+there, I figured rolling my own would be easiest (cough).
 
 What does it contain?
 =====================
@@ -33,9 +33,7 @@ Code characteristics / goals
 Requirements
 ============
 
-* phue (Philips Hue support - pure Python)
-* tzlocal (to get local timezone information)
-* pytz (required by tzlocal)
+* phue (Philips Hue support - pure Python, single .py)
 * tox (for unit testing; it will pull py.test and run things inside virtualenv)
 
 

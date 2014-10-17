@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Apr 19 19:21:34 2014 mstenber
-# Last modified: Sat Oct  4 17:38:22 2014 mstenber
-# Edit time:     79 min
+# Last modified: Fri Oct 17 18:37:25 2014 mstenber
+# Edit time:     88 min
 #
 """
 
@@ -39,11 +39,8 @@ DEFAULT_LON=25
 DEFAULT_LAT=60
 DEFAULT_ZENITH=ZENITH_LOWISH
 
+import time
 import datetime
-try:
-    from dateutil.tz import tzlocal
-except ImportError:
-    from tzlocal import get_localzone as tzlocal
 import math
 
 def _bound(v, min, max):
@@ -66,7 +63,7 @@ def d2r(d):
 
 def phase(dt=None, date=None, lon=DEFAULT_LON, lat=DEFAULT_LAT):
     if dt is None:
-        dt = datetime.datetime.now(tzlocal())
+        dt = datetime.datetime.now()
     if not date:
         date = datetime.date.today()
     # Even at poles should be resolvable in 200d, or math is wrong?
@@ -84,13 +81,18 @@ def phase(dt=None, date=None, lon=DEFAULT_LON, lat=DEFAULT_LAT):
 def within_zenith(**kwargs):
     dt = kwargs.get('dt', None)
     if dt is None:
-        dt = datetime.datetime.now(tzlocal())
+        dt = datetime.datetime.now()
     dt1 = calc(**kwargs)
     dt2 = calc(sunset=True, **kwargs)
     if isinstance(dt1, datetime.datetime) and dt1 < dt:
         if isinstance(dt2, datetime.datetime) and dt2 > dt:
             return True
 
+def utc2local(utc):
+    ".. as found from http://stackoverflow.com/questions/4770297/python-convert-utc-datetime-string-to-local-datetime .. (to avoid use of pytz/tzlocal)"
+    t = time.mktime(utc.timetuple())
+    offset = datetime.datetime.fromtimestamp(t) - datetime.datetime.utcfromtimestamp(t)
+    return utc + offset
 
 def calc(date=None, lon=DEFAULT_LON, lat=DEFAULT_LAT,
          sunset=False, zenith=DEFAULT_ZENITH):
@@ -161,11 +163,9 @@ def calc(date=None, lon=DEFAULT_LON, lat=DEFAULT_LAT,
     ut = _bound(ut, 0, 24)
 
     # .. and return as UTC for the time being
-    import pytz
-    dt = datetime.datetime(date.year, date.month, date.day,
-                           tzinfo=pytz.timezone('UTC'))
+    dt = datetime.datetime(date.year, date.month, date.day)
     dt = dt + datetime.timedelta(hours=ut)
-    return dt.astimezone(tzlocal())
+    return utc2local(dt)
 
 
 if __name__ == '__main__':
