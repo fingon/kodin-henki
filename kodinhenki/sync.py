@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sat Oct  4 15:02:45 2014 mstenber
-# Edit time:     79 min
+# Last modified: Fri Oct 17 20:10:50 2014 mstenber
+# Edit time:     82 min
 #
 """
 
@@ -96,23 +96,18 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    # .. own configuration ..
-    update_on_connect = True
     def __init__(self, db, client, *args, **kwargs):
         self.db = db
         self._receivers = []
         self.remove_receiver = self._receivers.remove
+        self.client = client
         if not client:
             _socketserver.TCPServer.__init__(self, *args, **kwargs)
-        else:
-            self.update_on_connect = False
         self.db.object_added.connect(self.db_object_added)
         self.db.object_changed.connect(self.db_object_changed)
         self.db.object_removed.connect(self.db_object_removed)
     def add_receiver(self, r):
         self._receivers.append(r)
-        if not self.update_on_connect:
-            return
         # Replay current database state for non-sync sourced things
         cb = functools.partial(self.send_update_one, r)
         for n, o in self.db.items():
@@ -121,6 +116,10 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
     def produce_updates(self, o, cb):
         cb('add', o.name)
         for k, (v, when, by) in o.items():
+            # State received from remote side may be stale if we're client,
+            # so do not (re)push it but instead expect server to be up to date
+            if self.client and by == BY:
+                continue
             cb('set', o.name, k, v, when)
     def db_object_added(self, o, by):
         self.produce_updates(o, self.send_update)
