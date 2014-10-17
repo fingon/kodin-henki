@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:45:37 2014 mstenber
-# Last modified: Tue Sep 30 07:56:52 2014 mstenber
-# Edit time:     65 min
+# Last modified: Fri Oct 17 18:59:07 2014 mstenber
+# Edit time:     68 min
 #
 """
 
@@ -100,9 +100,9 @@ class DiscoveryHandler(_socketserver.BaseRequestHandler):
                 device_seen(address=client_address, url=loc, headers=h)
 
 class DiscoveryServiceThread(threading.Thread):
-    def __init__(self, port):
-        ip = kodinhenki.util.get_ipv4_address()
-        assert ip
+    def __init__(self, ip=None, remote_ip=None, port=None):
+        ip = ip or (remote_ip and kodinhenki.util.get_ipv4_address()) or ''
+        port = port or 54321
         self.server = _socketserver.UDPServer((ip, port), DiscoveryHandler)
         threading.Thread.__init__(self, target=self.server.serve_forever)
         self.daemon = True
@@ -115,8 +115,8 @@ class DiscoveryServiceThread(threading.Thread):
         self.server.shutdown()
         self.join()
 
-def start(port=54321):
-    st = DiscoveryServiceThread(port=port)
+def start(**kwargs):
+    st = DiscoveryServiceThread(**kwargs)
     st.start()
     return st
 
