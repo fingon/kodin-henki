@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Sat Oct  4 14:40:13 2014 mstenber
+# Last modified: Fri Oct 17 18:49:30 2014 mstenber
 # Edit time:     13 min
 #
 """
@@ -23,11 +23,13 @@ import argparse
 import kodinhenki as kh
 import kodinhenki.sync as sync
 import time
+import os
 
 p = argparse.ArgumentParser(description='view/set kh state')
 p.add_argument('-v', '--verbose', action='store_true',
                help='verbose output')
-p.add_argument('--ip', default='127.0.0.1', type=str,
+ip = os.environ.get('KHIP', '127.0.0.1')
+p.add_argument('--ip', default=ip, type=str,
                help='address of the kh server')
 p.add_argument('--port', default=31342, type=int,
                help='port of the kh server')
