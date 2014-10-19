@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Fri Oct 17 20:10:50 2014 mstenber
-# Edit time:     82 min
+# Last modified: Sat Oct 18 21:57:33 2014 mstenber
+# Edit time:     84 min
 #
 """
 
@@ -67,7 +67,10 @@ class SyncReceiver(_socketserver.StreamRequestHandler):
         _debug('initialized %s' % self)
     def handle(self):
         while True:
-            line = self.rfile.readline().decode('utf-8').strip()
+            try:
+                line = self.rfile.readline().decode('utf-8').strip()
+            except:
+                return
             if not line:
                 break
             _debug('handling %s' % line)
@@ -124,6 +127,8 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
     def db_object_added(self, o, by):
         self.produce_updates(o, self.send_update)
     def db_object_changed(self, o, key, by, at, old, new):
+        if self.client and by == BY:
+            return
         self.send_update('set', o.name, key, new, at)
     def db_object_removed(self, o, by):
         self.send_update('remove', o.name)
