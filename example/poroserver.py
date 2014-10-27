@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Tue Oct 14 22:49:51 2014 mstenber
-# Edit time:     12 min
+# Last modified: Mon Oct 27 22:19:58 2014 mstenber
+# Edit time:     13 min
 #
 """
 
@@ -36,10 +36,10 @@ def _set_volume(n):
     os.system('osascript -e "set Volume %d"' % n)
 
 def start():
-    process.start({'process.xbmc': 'XBMC', 'process.emacs': 'Emacs.app'})
-    user_active.start('user_active.poro')
+    process.start({'xbmc': 'XBMC', 'emacs': 'Emacs.app'})
+    user_active.start('poro')
     def _f(o, key, old, new, **kwargs):
-        if o.name == 'home' and key == 'state_name':
+        if o.id == '.kh.home.' and key == 'state_name':
             if old == 'ProjectorState':
                 _set_volume(3)
             if new == 'NightState':

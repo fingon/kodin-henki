@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 14:08:10 2014 mstenber
-# Last modified: Sat Oct  4 12:22:07 2014 mstenber
-# Edit time:     8 min
+# Last modified: Mon Oct 27 20:37:24 2014 mstenber
+# Edit time:     14 min
 #
 """
 
@@ -18,7 +18,7 @@ Test that the database synchronization works..
 
 """
 
-import kodinhenki.db as db
+import prdb
 import kodinhenki.sync as sync
 
 from mock import Mock
@@ -27,8 +27,10 @@ import threading
 import logging
 
 def test_sync():
-    db1 = db.Database()
-    db2 = db.Database()
+    db1 = prdb.new()
+    cl1 = db1.declare_app('simple', version=1).declare_class('dummy')
+    db2 = prdb.new()
+    cl2 = db2.declare_app('simple', version=1).declare_class('dummy')
 
     ma = Mock()
     mr = Mock()
@@ -46,38 +48,31 @@ def test_sync():
 
     s1 = sync.start_server(db1, port=0)
 
-    o1 = db1.add('foo')
+    o1 = cl1.new_named('foo')
     o1.set('bar', 'baz')
 
-    o2 = db1.add('foo2')
+    o2 = cl2.new_named('foo2')
 
     s2 = sync.start_client(db2, ('127.0.0.1', s1['port']))
 
-    while not db2.exists('foo2'):
+    db1.commit()
+    db2.commit()
+    while not cl2.get_named('foo2'):
         assert e.wait(0.5)
 
-    o2 = db2.add('bar', dummyi=1, dummyf=3.14, dummys='foo')
+    o2 = cl2.new_named('bar', dummyi=1, dummyf=3.14, dummys='foo')
     o2.set('bar', 'barf')
-    while not db1.exists('bar'):
+    db2.commit()
+
+    while not cl1.get_named('bar'):
         assert e.wait(0.5)
 
-    # zap in origin
-    print('waiting remove 1')
-    db1.remove('foo')
-    while db2.exists('foo'):
+    o1.bar = 'barf'
+    db1.commit()
+    while cl2.get_named('foo').bar == 'baz':
         assert e.wait(0.5)
 
-    # zap in origin
-    print('waiting remove 2')
-    db2.remove('bar')
-    while db1.exists('foo'):
-        assert e.wait(0.5)
 
-    # zap in non-origin
-    print('waiting remove 3')
-    db2.remove('foo2')
-    while db1.exists('foo2'):
-        assert e.wait(0.5)
     print('done')
 
     sync.stop_server(s1)

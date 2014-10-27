@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:36:37 2014 mstenber
-# Last modified: Sat Oct  4 11:53:34 2014 mstenber
-# Edit time:     4 min
+# Last modified: Mon Oct 27 21:04:12 2014 mstenber
+# Edit time:     5 min
 #
 """
 
@@ -18,10 +18,13 @@ This is somewhat tricky to test for real..
 
 """
 
+import kodinhenki
 import kodinhenki.user_active as user_active
 
 def test_user_active():
+    kodinhenki.drop_database() # in case previous thing played with it
+    kodinhenki.get_database() # declare schema again
     o = user_active.start('ua')
-    o.get('on')
+    o.o.get('on')
     o.stop()
 

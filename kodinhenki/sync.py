@@ -9,13 +9,13 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sat Oct 18 21:57:33 2014 mstenber
-# Edit time:     84 min
+# Last modified: Mon Oct 27 20:36:59 2014 mstenber
+# Edit time:     97 min
 #
 """
 
 This is the minimalist sync module. The assumption is that we want to
-make sure the kodinhenki.db state is shared across multiple nodes.
+make sure the prdb state is shared across multiple nodes.
 
 To do that, we designate one node as 'master', who provides single TCP
 port for connections. The TCP traffic consists of simply lines of
@@ -25,20 +25,14 @@ json, with rather simple semantics:
 
 where:
 
- cmd = add
-  => args: name
-
- cmd = remove
-  => args: name
-
- cmd = set
-  => args: name, k, v, when [by is lost]
+ cmd = log
+  => args: (timestamp, oid, state-dict)
 
  cmd = sync_end ( start is implicit)
 """
 
+import prdb
 import kodinhenki as kh
-import kodinhenki.db as db
 from kodinhenki.util import Signal
 
 import kodinhenki.compat as compat
@@ -60,12 +54,13 @@ in_sync = Signal()
 BY='sync'
 
 # Note: This has to be in it's own thread or bad things happen ..
-class SyncReceiver(_socketserver.StreamRequestHandler):
+class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
     def setup(self):
         _socketserver.StreamRequestHandler.setup(self)
         self.server.add_receiver(self)
         _debug('initialized %s' % self)
     def handle(self):
+        db = self.server.db
         while True:
             try:
                 line = self.rfile.readline().decode('utf-8').strip()
@@ -75,21 +70,15 @@ class SyncReceiver(_socketserver.StreamRequestHandler):
                 break
             _debug('handling %s' % line)
             d = json.loads(line)
-            if d[0] == 'add':
-                if not self.server.db.exists(d[1]):
-                    self.server.db.add(d[1], by=BY)
-            elif d[0] == 'remove':
-                if self.server.db.exists(d[1]):
-                    self.server.db.remove(d[1], by=BY)
-            elif d[0] == 'set':
-                (n, k, v, when) = d[1:]
-                if self.server.db.exists(n):
-                    self.server.db.get(n).set(k, v, by=BY, now=when)
+            if d[0] == 'log':
+                db.process_decoded_line(d[1])
             elif d[0] == 'sync_end':
                 in_sync()
             else:
                 raise NotImplementedError('unknown input', d)
             request_handled()
+    def handle_flushed_data(self, data):
+        self.server.send_update_one(self, 'log', data)
     def finish(self):
         self.server.remove_receiver(self)
         _debug('finished %s' % self)
@@ -106,36 +95,20 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
         self.client = client
         if not client:
             _socketserver.TCPServer.__init__(self, *args, **kwargs)
-        self.db.object_added.connect(self.db_object_added)
         self.db.object_changed.connect(self.db_object_changed)
-        self.db.object_removed.connect(self.db_object_removed)
+        #self.db.object_removed.connect(self.db_object_removed)
     def add_receiver(self, r):
         self._receivers.append(r)
-        # Replay current database state for non-sync sourced things
-        cb = functools.partial(self.send_update_one, r)
-        for n, o in self.db.items():
-            self.produce_updates(o, cb)
+        self.db.dump_to_writer(r)
         self.send_update_one(r, 'sync_end')
-    def produce_updates(self, o, cb):
-        cb('add', o.name)
-        for k, (v, when, by) in o.items():
-            # State received from remote side may be stale if we're client,
-            # so do not (re)push it but instead expect server to be up to date
-            if self.client and by == BY:
-                continue
-            cb('set', o.name, k, v, when)
-    def db_object_added(self, o, by):
-        self.produce_updates(o, self.send_update)
-    def db_object_changed(self, o, key, by, at, old, new):
-        if self.client and by == BY:
-            return
-        self.send_update('set', o.name, key, new, at)
-    def db_object_removed(self, o, by):
-        self.send_update('remove', o.name)
-    def send_update(self, *args):
-        # Inefficient, but makes life much simpler
+    def db_object_changed(self, o, key, by, when, old, new):
+        # if self.client and by == BY: return
+        # wonder if this is really needed with prdb; with
+        # old db it was, to prevent loops..
+
+        # Wonder if these should be buffered.. nahh..
         for r in self._receivers:
-            self.send_update_one(r, *args)
+            self.send_update_one(r, 'log', (when, o.id, {key: new}))
     def send_update_one(self, r, *args):
         s = json.dumps(args)
         _debug('sending %s' % s)

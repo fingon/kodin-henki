@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 19:03:29 2014 mstenber
-# Last modified: Sat Oct  4 13:08:06 2014 mstenber
+# Last modified: Mon Oct 27 19:34:24 2014 mstenber
 # Edit time:     6 min
 #
 """
@@ -20,30 +20,10 @@ Assorted utilities
 
 import socket
 import threading
+import prdb.util
 
-# Decoupled listener implementation with optional filtering
-# (e.g. 'pysignal' is something like this, but Django semantics make
-# it look much harder)
-
-class Signal:
-    def __init__(self):
-        self._listeners = []
-    def connect(self, callback, filter=None):
-        self._listeners.append((callback, filter))
-    def __call__(self, **kwargs):
-        for fun, filter in self._listeners:
-            if not filter or filter(kwargs):
-                fun(**kwargs)
-    def disconnect(self, callback, filter=None):
-        self._listeners.remove((callback, filter))
-    def wait(self, timeout=None):
-        ev = threading.Event()
-        def _f(**kwargs):
-            ev.set()
-        self.connect(_f)
-        rv = ev.wait(timeout=timeout)
-        self.disconnect(_f)
-        return rv
+# Import Signal from elsewhere :-p
+Signal = prdb.util.Signal
 
 def _get_ip_address(af, dest):
     s = socket.socket(af, socket.SOCK_DGRAM)

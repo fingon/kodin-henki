@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:10:38 2014 mstenber
-# Last modified: Sat Oct  4 14:46:48 2014 mstenber
-# Edit time:     11 min
+# Last modified: Mon Oct 27 21:28:04 2014 mstenber
+# Edit time:     16 min
 #
 """
 
@@ -22,18 +22,23 @@ Usage: .start({key: substring[, key: substring, ..]})
 
 import kodinhenki as kh
 import kodinhenki.updater as updater
+import kodinhenki.prdb_kh as _prdb_kh
 
 import os
+
+import logging
+logger = logging.getLogger('kh.user_active')
+_debug = logger.debug
+_error = logger.error
 
 PS_STRING = 'ps awx'
 
 class ProcessMonitor(updater.Updated):
-    def __init__(self, db, pdict):
-        self.db = db or kh.get_database()
+    def __init__(self, pdict):
         self.pdict = pdict
         # Add the objects
-        for k in pdict.keys():
-            self.db.get_or_create(name=k).set('on', False)
+        for name in pdict.keys():
+            _prdb_kh.Process.new_named(name, on=False)
     def next_update_in_seconds(self):
         return 30 # hardcoded, but oh well
     def update(self):
@@ -42,9 +47,10 @@ class ProcessMonitor(updater.Updated):
         # We _know_ the objects exist
         for name, match in self.pdict.items():
             on = True if any (match in l for l in lines) else False
-            self.db.get(name).set('on', on)
+            _prdb_kh.Process.get_named(name).on=on
 
-def start(d, db=None):
-    m = ProcessMonitor(db, d)
+def start(d):
+    _debug('starting process %s', repr(d))
+    m = ProcessMonitor(d)
     updater.add(m)
     return m

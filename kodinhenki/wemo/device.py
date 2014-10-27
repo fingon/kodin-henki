@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Sat Oct 11 10:16:33 2014 mstenber
-# Edit time:     40 min
+# Last modified: Mon Oct 27 22:29:03 2014 mstenber
+# Edit time:     58 min
 #
 """
 
@@ -19,9 +19,12 @@ Switch, smirk).
 
 """
 
-import kodinhenki.db
+import prdb
+import kodinhenki.prdb_kh as _prdb_kh
+import kodinhenki.wemo as _wemo
 import kodinhenki.wemo.service
 from kodinhenki.util import Signal
+
 import socket
 
 import kodinhenki.compat as compat
@@ -41,21 +44,25 @@ DEVICE_NAME='wemo.%s'
 
 device_added = Signal()
 
-class WemoBase(kodinhenki.db.Object):
+class WemoBase(prdb.Owner):
     _subscription = None # Event subscription, handled externally
-    def __init__(self, url, services, **kwargs):
-        p = _parse.urlparse(url)
-        ip = p.netloc.split(':')[0]
-        kwargs['ip'] = ip
-        kodinhenki.db.Object.__init__(self, **kwargs)
-        self.set_url(url)
-        self.set_services(services)
+    ip = None
     def is_on(self):
-        return self.get('on')
+        return self.o.get('on')
     def set_services(self, services):
         self.services = services
     def set_url(self, url):
         self.url = url
+        p = _parse.urlparse(url)
+        ip = p.netloc.split(':')[0]
+        self.ip = ip
+    def object_changed(self, key, old, new, by, **kwargs):
+        if not (key == 'on' and by != _wemo.BY):
+            return
+        if not self.set_state(new):
+            # Do inverse set - back to old value.
+            self.o.set(key, old, by=_wemo.BY)
+
 
 class WemoSwitch(WemoBase):
     def set_state(self, v):
@@ -66,13 +73,17 @@ class WemoSwitch(WemoBase):
     def turn_off(self):
         self.set('on', False)
 
+_prdb_kh.WemoSwitch.set_create_owner_instance_callback(WemoSwitch)
+
 class WemoMotion(WemoBase):
     def set_state(self, v):
         pass
 
+_prdb_kh.WemoMotion.set_create_owner_instance_callback(WemoMotion)
+
 udn_prefix_to_class = [
-    ('uuid:Sensor', WemoMotion),
-    ('uuid:Socket', WemoSwitch)
+    ('uuid:Sensor', _prdb_kh.WemoMotion),
+    ('uuid:Socket', _prdb_kh.WemoSwitch)
     ]
 
 def _get_text_l(l):
@@ -90,7 +101,7 @@ def _wemo_string(o, n, default=None):
             return s
     return default
 
-def _from_db_url_string(db, url, data):
+def _from_url_string(url, data):
     doc = parseString(data)
     assert doc
     #_debug('got device: %s' % repr(doc))
@@ -105,34 +116,31 @@ def _from_db_url_string(db, url, data):
         _debug(' no UDN match:%s' % udn)
         return
     name = _wemo_string(doc, 'friendlyName', '?')
-    fname = DEVICE_NAME % name
-    try:
-        o = db.get(fname)
-        assert isinstance(o, cls)
-        _debug('%s already existed and is of class %s' % (fname, repr(cls)))
-    except KeyError:
-        o = None
-    if o and o.url == url:
-        return o
+    o = cls.get_named(name)
+    if o:
+        if o.url == url:
+            return o.get_owner()
+        o = o.get_owner()
     sol = list(doc.getElementsByTagName('service'))
     services = list([
             kodinhenki.wemo.service.from_url_object(url, o2)
             for o2 in sol])
     services = dict([(s.service_type.split(':')[-2].lower(), s) for s in services])
-    if o:
-        o.set_url(url)
-        o.set_services(services)
-    else:
-        o = cls(name=fname, url=url, services=services)
-        db.add_object(o)
+    is_new = False
+    if not o:
+        o = cls.new_named(name).get_owner()
+        is_new = True
+    o.set_url(url)
+    o.set_services(services)
+    if is_new:
         device_added(o=o)
     return o
 
-def from_db_url(db, url):
+def from_url(url):
     try:
         data = urlopen(url, None, 5).read()
     except:
         return
-    return _from_db_url_string(db, url, data)
+    return _from_url_string(url, data)
 
 

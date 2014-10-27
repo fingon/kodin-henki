@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:01:42 2014 mstenber
-# Last modified: Fri Oct 17 18:39:48 2014 mstenber
+# Last modified: Mon Oct 27 19:34:32 2014 mstenber
 # Edit time:     7 min
 #
 """
@@ -28,6 +28,6 @@ setup(name='kodinhenki',
       author = 'Markus Stenberg',
       author_email = 'fingon+kh@iki.fi',
       packages = ['kodinhenki', 'kodinhenki.wemo'],
-      install_requires=['phue']
+      install_requires=['phue', 'prdb']
       )
 

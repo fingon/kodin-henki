@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Tue Oct  7 10:59:31 2014 mstenber
-# Edit time:     111 min
+# Last modified: Mon Oct 27 22:32:02 2014 mstenber
+# Edit time:     143 min
 #
 """
 
@@ -25,8 +25,10 @@ Basic idea:
 MAIN_NAME='hue'
 BULB_NAME='%s.%s'
 
-import kodinhenki.db
-import kodinhenki.updater
+import prdb
+import kodinhenki
+import kodinhenki.prdb_kh as _prdb_kh
+import kodinhenki.updater as updater
 import phue
 import time
 
@@ -36,29 +38,19 @@ import logging
 _debug = logging.debug
 _error = logging.error
 
-class HueBulb(kodinhenki.db.Object):
-    def get_parent(self):
-        db = self.get_database()
-        return get(db)
-    def get_bridge(self):
-        return self.get_parent().get_bridge()
-    def get_light_object(self):
-        # No explicit locking here, but expected caller to make sure
-        # bridge isn't accessed willy-nilly..
-        light_name = self.get('light_name')
-        d = self.get_bridge().get_light_objects(mode='name')
-        light = d.get(light_name, None)
-        if light:
-            return light
-        raise KeyError(light_name)
+class HueBulb(prdb.Owner):
+    def object_changed(self, **kwargs):
+        get_updater().bulb_changed(self, **kwargs)
     def is_on(self):
-        return self.get('on')
+        return self.o.get('on')
     def turn_on(self):
-        self.set('on', True)
+        self.o.set('on', True)
     def turn_off(self):
-        self.set('on', False)
+        self.o.set('on', False)
 
-class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
+_prdb_kh.HueBulb.set_create_owner_instance_callback(HueBulb)
+
+class HueUpdater(prdb.Owner, updater.Updated):
     # How long do we believe in the 'current' timestamp?
     # (in seconds)
     light_check_interval = 30
@@ -70,26 +62,23 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     _lights_dirty_after = 0
     _b = None
 
-    def on_add_to_db(self, db):
-        db.object_changed.connect(self.bulb_changed)
-    def on_remove_from_db(self, db):
-        db.object_changed.disconnect(self.bulb_changed)
-    def bulb_changed(self, o, key, by, at, old, new):
-        if not (key == 'on' and by != BY_US and o.name.startswith(MAIN_NAME)):
+    def bulb_changed(self, b, key, new, by, **kwargs):
+        _debug('bulb_changed %s %s %s %s' % (b, key, new, by))
+        if not (key == 'on' and by != BY_US):
             return
-        _debug('setting light state %s=%s' % (o.name, new))
-        lo = o.get_light_object()
+        _debug('setting light state %s=%s' % (b.o.light_name, new))
+        light_name = b.o.get('light_name')
+        b = self.get_bridge(force=self.dynamically_update_lights)
+        d = b.get_light_objects(mode='name')
+        lo = d.get(light_name, None)
+        if not lo:
+            raise KeyError(light_name)
         lo.on = new
         self.mark_dirty()
     def get_bridge(self, force=False):
         if not self._b or force:
-            self._b = phue.Bridge(self.get('ip'))
+            self._b = phue.Bridge(self.o.get('ip'))
         return self._b
-    # Lights are stored not as objects, but as names
-    def get_lights(self):
-        return self.get_defaulted('lights', [])
-    def get_light_objects(self):
-        return [self.get_database().get(x) for x in self.get_lights()]
     def mark_dirty(self):
         self._lights_dirty_after = 0
         self.next_update_in_seconds_changed()
@@ -99,22 +88,16 @@ class Hue(kodinhenki.db.Object, kodinhenki.updater.Updated):
     def update(self):
         b = self.get_bridge(force=self.dynamically_update_lights)
         lobs = b.get_light_objects(mode='name')
-        db = self.get_database()
-        l = []
         for name, light in lobs.items():
-            #name = unicode(light.name, 'utf-8')
-            n = BULB_NAME % (MAIN_NAME, name)
-            if not db.exists(n):
-                b = HueBulb(name=n, light_name=name)
-                db.add_object(b)
-            else:
-                b = db.get(n)
-            b.set('on', light.on, by=BY_US)
-            l.append(n)
-        l.sort()
-        self.set('lights', l, by=BY_US)
+            is_on = light.on
+            bulb = _prdb_kh.HueBulb.new_named(name, light_name=name, on=is_on).get_owner()
         self._lights_dirty_after = time.time() + self.light_check_interval
         # we're automatically readded post-update
 
-get = kodinhenki.db.singleton_object_factory(MAIN_NAME, Hue)
+_prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 
+def get_updater(**kwargs):
+    return _prdb_kh.HueUpdater.new_named(**kwargs).get_owner()
+
+# backwards compatible API
+get = get_updater

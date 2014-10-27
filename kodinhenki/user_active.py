@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:25:26 2014 mstenber
-# Last modified: Tue Oct  7 18:51:20 2014 mstenber
-# Edit time:     19 min
+# Last modified: Mon Oct 27 21:27:31 2014 mstenber
+# Edit time:     26 min
 #
 """
 
@@ -21,7 +21,8 @@ for me for now.
 
 """
 
-import kodinhenki.db
+import prdb
+import kodinhenki.prdb_kh as _prdb_kh
 
 import subprocess
 import threading
@@ -58,26 +59,22 @@ def _start_reader_thread(command, callback, autostart=False):
 
 user_active_period = 5 # in seconds
 
-class UserActivityMonitor(kodinhenki.db.Object):
-    sleepwatcher = '/usr/local/sbin/sleepwatcher'
+sleepwatcher = '/usr/local/sbin/sleepwatcher'
+
+class UserActivityMonitor(prdb.Owner):
     _thread = None
-    def __init__(self, *args, **kwargs):
-        # Determine initial state by hand
-        if 'on' not in kwargs:
-            now_idle = int(os.popen(self.sleepwatcher + ' -g').read()) / 10.0
-            state = now_idle <= user_active_period and True or False
-            kwargs['on'] = state
-        kodinhenki.db.Object.__init__(self, *args, **kwargs)
+    def init(self):
+        pass
     def handle_state(self, state):
         if state == '0':
-            self.set('on', False)
+            self.o.set('on', False)
         elif state == '1':
-            self.set('on', True)
+            self.o.set('on', True)
         else:
             raise NotImplementedError("weird state:%s" % state)
     def start(self):
         t = str(user_active_period * 10) # sleepwatcher wants 10ths of second
-        self._thread = _start_reader_thread([self.sleepwatcher, '-t', t,
+        self._thread = _start_reader_thread([sleepwatcher, '-t', t,
                                              '-i', 'echo 0',
                                              '-R', 'echo 1'],
                                             self.handle_state)
@@ -90,12 +87,13 @@ class UserActivityMonitor(kodinhenki.db.Object):
         # TBD - how to get rid of the subprocess in self._thread
         self.stop()
 
+_prdb_kh.UserActive.set_create_owner_instance_callback(UserActivityMonitor)
+
 def start(name, db=None):
-    db = db or kodinhenki.db.get_database()
-    if db.exists(name):
-        db.remove(name)
-    o = UserActivityMonitor(name)
-    db.add_object(o)
+    _debug('starting user_active %s', name)
+    now_idle = int(os.popen(sleepwatcher + ' -g').read()) / 10.0
+    state = now_idle <= user_active_period and True or False
+    o = _prdb_kh.UserActive.new_named(name, on=state).get_owner()
     o.start()
     return o
 

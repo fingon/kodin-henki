@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Fri Oct 17 19:00:49 2014 mstenber
-# Edit time:     10 min
+# Last modified: Mon Oct 27 21:33:39 2014 mstenber
+# Edit time:     12 min
 #
 """
 
@@ -27,26 +27,28 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(message)s')
 logging.getLogger('kh.updater').setLevel(logging.INFO)
 
 import kodinhenki.hue as hue
-import kodinhenki.wemo as wemo
+import kodinhenki.wemo.device_tracker as dt
 import kodinhenki.sync as sync
 import kodinhenki.updater as updater
 
 ip=None
 import socket
+
 if socket.gethostname() == 'cer':
     ip='192.168.44.1'
     # The remote_ip based lookup does not really seem to work with v4.
     # Oh well. So hardcode here for the cer case with N addresses.
+
 def start():
     # Start database (implicitly on the hardcoded port + any ip)
     sync.start_server()
 
     # Start the devices
-    updater.add(hue.get(ip='192.168.44.10'))
-    updater.add(wemo.get(ip=ip,
-                         remote_ip='192.168.44.254',
-                         discovery_port=54321,
-                         event_port=8989))
+    updater.add(hue.get_updater(ip='192.168.44.10'))
+    updater.add(dt.get(ip=ip,
+                       remote_ip='192.168.44.254',
+                       discovery_port=54321,
+                       event_port=8989))
 
 if __name__ == '__main__':
     start()

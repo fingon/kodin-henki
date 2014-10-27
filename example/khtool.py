@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Fri Oct 17 18:49:30 2014 mstenber
-# Edit time:     13 min
+# Last modified: Mon Oct 27 21:55:08 2014 mstenber
+# Edit time:     17 min
 #
 """
 
@@ -22,6 +22,7 @@ from __future__ import print_function
 import argparse
 import kodinhenki as kh
 import kodinhenki.sync as sync
+import kodinhenki.prdb_kh as _prdb_kh
 import time
 import os
 
@@ -40,7 +41,7 @@ db = kh.get_database()
 sync.start_client(db, (args.ip, args.port))
 sync.in_sync.wait()
 def _dump_one(ok, kk):
-    o = db.get(ok)
+    o = db.get_by_oid(ok)
     v = o.get(kk)
     changed = ''
     if args.verbose:
@@ -48,12 +49,16 @@ def _dump_one(ok, kk):
         if changed:
             changed = ' (-%d)' % (time.time() - changed)
     print('%s/%s=%s%s' % (ok, kk, v, changed))
+
 def _dump_object(ok):
-    for kk in sorted(db.get(ok).keys()):
+    for kk in sorted(db.get_by_oid(ok).keys()):
+        if kk[0] == '_':
+            continue
         _dump_one(ok, kk)
+
 if not args.keys:
     # Show all keys!
-    for k in sorted(db.keys()):
+    for k in sorted(_prdb_kh.KH.instances().as_oid_list()):
         _dump_object(k)
 else:
     did_set = [False]

@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:18:36 2014 mstenber
-# Last modified: Sat Oct  4 14:56:33 2014 mstenber
-# Edit time:     2 min
+# Last modified: Mon Oct 27 20:50:56 2014 mstenber
+# Edit time:     5 min
 #
 """
 
@@ -20,13 +20,16 @@ ensure process monitor works
 
 import kodinhenki as kh
 import kodinhenki.process as process
+import kodinhenki.prdb_kh as _prdb_kh
 
 def test_process():
+    kh.drop_database() # in case previous thing played with it
     db = kh.get_database()
-    pm = process.ProcessMonitor(db, {'zsh': 'zsh',
-                                     'x': 'dghswaedherh'})
+    pm = process.ProcessMonitor({'zsh': 'zsh',
+                                 'x': 'dghswaedherh'})
     #assert pm.next_update_in_seconds() < 0 # n/a - always constant
     pm.update()
     assert pm.next_update_in_seconds() > 0
-    assert db.get('zsh').get('on')
-    assert not db.get('x').get('on')
+    assert _prdb_kh.Process.get_named('zsh').get('on')
+    assert not _prdb_kh.Process.get_named('x').get('on')
+

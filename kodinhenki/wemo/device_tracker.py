@@ -9,26 +9,25 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Fri Oct 17 18:56:14 2014 mstenber
-# Edit time:     108 min
+# Last modified: Mon Oct 27 21:11:14 2014 mstenber
+# Edit time:     122 min
 #
 """
 
 Device tracker.
 
 It is responsible to keeping track of WeMo devices. It provides the
-root 'WeMo' object for the kodinhenki database as well.
+root 'WemoTracker' object for the kodinhenki database as well.
 
 """
 
-MAIN_NAME='wemo'
-BY_US='wemo'
-
-import kodinhenki.db
+import prdb
+import kodinhenki.prdb_kh as _prdb_kh
 import kodinhenki.updater as updater
 import kodinhenki.util
 import kodinhenki.wemo.discover as discover
 import kodinhenki.wemo.device
+import kodinhenki.wemo as _wemo
 import kodinhenki.wemo.event as event
 import time
 
@@ -42,7 +41,7 @@ _error = _logger.error
 
 send_discover = kodinhenki.util.Signal()
 
-class WeMo(kodinhenki.db.Object, updater.Updated):
+class WemoTracker(prdb.Owner, updater.Updated):
     last_discovery = 0
 
     discover_every = 900
@@ -51,35 +50,23 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
     event_receiver = None
     discovery_thread = None
 
-    def __init__(self, name, discovery_port=None, event_port=None, ip=None, remote_ip=None, *args, **kwargs):
-        kodinhenki.db.Object.__init__(self, name, *args, **kwargs)
+    def init(self):
         self._devices = {}
         discover.device_seen.connect(self.device_seen)
         event.received.connect(self.device_state_event)
-        if event_port is not None:
-            self.event_receiver = event.start_ipv4_receiver(ip=ip, remote_ip=remote_ip, port=event_port)
-        if discovery_port is not None:
-            self.discovery_thread = discover.start(ip=ip, port=discovery_port)
-            send_discover.connect(self.discovery_thread.send)
+    def set_event_port(self, event_port, **kwargs):
+        self.event_receiver = event.start_ipv4_receiver(port=event_port, **kwargs)
+    def set_discovery_port(self, discovery_port, **kwargs):
+        self.discovery_thread = discover.start(port=discovery_port, **kwargs)
+        send_discover.connect(self.discovery_thread.send)
     def __del__(self):
         if self.discovery_thread:
             self.discovery_thread.stop()
-    def on_add_to_db(self, db):
-        db.object_changed.connect(self.db_state_changed)
-    def on_remove_from_db(self, db):
-        db.object_changed.disconnect(self.db_state_changed)
-    def db_state_changed(self, o, key, by, at, old, new):
-        if not (key == 'on' and by != BY_US and o.name.startswith(MAIN_NAME)):
-            return
-        if not o.set_state(new):
-            # Do inverse set - back to old value.
-            o.set(key, old, by=BY_US)
-
     def device_state_event(self, ip, state):
         for url, d in self._devices.items():
             o = d['o']
-            if o.get('ip') == ip:
-                o.set('on', state, by=BY_US)
+            if o.ip == ip:
+                o.o.set('on', state, by=_wemo.BY)
                 return
         _debug('unknown device - ip=%s' % ip)
     def device_seen(self, url, **kwargs):
@@ -89,8 +76,7 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
         _debug('marking seen: %s' % o)
     def probe(self, url):
         _debug('probing new url: %s' % url)
-        db = self.get_database()
-        o = kodinhenki.wemo.device.from_db_url(db, url)
+        o = kodinhenki.wemo.device.from_url(url)
         if not o: return
         if self.event_receiver is not None:
             full_url = urljoin(url, o.services['basicevent'].event_sub_url)
@@ -123,4 +109,14 @@ class WeMo(kodinhenki.db.Object, updater.Updated):
                 _debug('getting rid of %s - too historic' % repr(d))
                 del self._devices[url]
 
-get = kodinhenki.db.singleton_object_factory(MAIN_NAME, WeMo)
+_prdb_kh.WemoTracker.set_create_owner_instance_callback(WemoTracker)
+
+
+def get(event_port=None, discovery_port=None, **ipargs):
+    o = _prdb_kh.WemoTracker.new_named().get_owner()
+    assert o
+    if event_port:
+        o.set_event_port(event_port, **ipargs)
+    if discovery_port:
+        o.set_discovery_port(discovery_port, **ipargs)
+    return o

@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Wed Oct  8 20:32:51 2014 mstenber
-# Edit time:     210 min
+# Last modified: Mon Oct 27 22:18:54 2014 mstenber
+# Edit time:     228 min
 #
 """
 
@@ -35,28 +35,24 @@ _debug = logger.debug
 import khserver
 import poroserver
 
+import prdb
 import kodinhenki as kh
 import kodinhenki.hue as hue
 import kodinhenki.user_active as ua
 import kodinhenki.updater as updater
 import kodinhenki.suncalc as suncalc
-
-khserver.start()
-db = kh.get_database()
-
-if socket.gethostname() == 'poro.lan':
-    poroserver.start()
+import kodinhenki.prdb_kh as _prdb_kh
 
 # activity sources
-IP='user_active.poro'
-WM='wemo.WeMo Motion'
+IP='.kh.user_active.poro'
+WM='.kh.wemo_motion.WeMo Motion'
 
 # lights to be controlled
-LB='hue.Bed'
-LC='hue.Entry'
-LK='hue.Kitchen'
-LR='hue.Living'
-WT='wemo.WeMo Toilet'
+LB='.kh.hue.Bed'
+LC='.kh.hue.Entry'
+LK='.kh.hue.Kitchen'
+LR='.kh.hue.Living'
+WT='.kh.wemo_switch.WeMo Toilet'
 
 # Which light do we care about when it's daylight?
 DAYLIGHT_LIGHTS=[WT]
@@ -66,10 +62,11 @@ SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
 _seen_on = {}
 
 def _last_changed(e):
-    if not db.exists(e):
+    o = db.get_by_oid(e)
+    if not o:
+        _debug('no %s', e)
         return
-    o = db.get(e)
-    st = o.get_defaulted('on')
+    st = o.get('on', None)
     delay = SENSOR_BUILT_IN_DELAY.get(e, 0)
     if st:
         _seen_on[e] = True
@@ -171,15 +168,15 @@ def _most_recent(e, *el):
             return False
     return True
 
-class Home(kh.Object, updater.Updated):
+class Home(prdb.Owner, updater.Updated):
     state = HomeState()
     def determine_state_class(self):
         """ This is the main place where we determine the overall
         'home state'. Later on, if the chosen state is not valid
         (mostly due to timeout), we will default to HomeState which
         means all off in any case."""
-        xbmc = db.get_if_exists('process.xbmc')
-        st = xbmc and xbmc.get_defaulted('on')
+        xbmc = _prdb_kh.Process.get_named('xbmc')
+        st = xbmc and xbmc.get('on', None)
         if st: return ProjectorState
 
         # XXX - this is temporary check because it seems that
@@ -205,15 +202,15 @@ class Home(kh.Object, updater.Updated):
                 self.state.leave()
             self.state = cls()
             self.state.enter()
-            self.set('state_name', cls.__name__)
+            self.o.state_name = cls.__name__
         desired_state = self.state.update_lights()
         if not desired_state:
             return
         changed_state = {}
         for name, state in desired_state.items():
-            o = db.get_if_exists(name)
+            o = db.get_by_oid(name)
             if o:
-                if o.get_defaulted('on') is not state:
+                if o.get('on', None) is not state:
                     changed_state[o] = state
         if not changed_state:
             return
@@ -225,7 +222,7 @@ class Home(kh.Object, updater.Updated):
             if key == 'on':
                 hue_changed[0] = True
         db.object_changed.connect(_f)
-        hue.get().update()
+        hue.get_updater().update()
         db.object_changed.disconnect(_f)
         if hue_changed[0]:
             return
@@ -233,8 +230,22 @@ class Home(kh.Object, updater.Updated):
         for o, state in changed_state.items():
             o.set('on', state)
 
-h = Home('home')
-db.add_object(h)
+def _object_added(**kwargs):
+    _debug('object_added %s' % repr(kwargs))
+
+def _object_changed(o, key, old, new, **kwargs):
+    _debug('object_change: %s/%s: %s=>%s %s' % (o.id, key, old, new, kwargs))
+
+_prdb_kh.Home.set_create_owner_instance_callback(Home)
+_debug('creating official database instance')
+db = kh.get_database()
+db.object_added.connect(_object_added)
+db.object_changed.connect(_object_changed)
+
+khserver.start()
+if socket.gethostname() == 'poro.lan':
+    poroserver.start()
+h = _prdb_kh.Home.new_named().get_owner()
 updater.add(h)
 
 # threads will implicitly do their stuff ..

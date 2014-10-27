@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Sat Oct  4 17:27:48 2014 mstenber
-# Edit time:     60 min
+# Last modified: Mon Oct 27 21:01:46 2014 mstenber
+# Edit time:     61 min
 #
 """
 
@@ -21,6 +21,8 @@ import kodinhenki.wemo as wemo
 import kodinhenki.wemo.discover as discover
 import kodinhenki.wemo.device as device
 import kodinhenki.wemo.event as event
+import kodinhenki.wemo.device_tracker as dt
+
 from mock import Mock
 import threading
 import time
@@ -31,8 +33,9 @@ urljoin = compat.get_urllib_parse().urljoin
 
 def test_wemo(caplog):
     if caplog: caplog.setLevel(logging.DEBUG)
-    db = kodinhenki.get_database()
-    w = wemo.get(db)
+    kodinhenki.drop_database() # in case previous thing played with it
+    db = kodinhenki.get_database() # not really used, but needed to populate schema
+    w = dt.get()
     device_seen = Mock()
     discover.device_seen.connect(device_seen)
     r = event.start_ipv4_receiver(port=8989, remote_ip='1.2.3.4')
