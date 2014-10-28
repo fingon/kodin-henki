@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Oct 27 22:18:54 2014 mstenber
-# Edit time:     228 min
+# Last modified: Tue Oct 28 08:47:33 2014 mstenber
+# Edit time:     238 min
 #
 """
 
@@ -88,6 +88,17 @@ class HomeState:
     sensor = None # sensor to monitor (see within next)
     within = None # how recently it must have been active to apply
     lights_conditional = {} # light => (sensor, timeout) mapping
+    def next_update_in_seconds(self):
+        if self.sensor and self.within:
+            c = _last_changed(self.sensor)
+            #_debug('got sensor+within: %s, %s', c, self.within)
+            if c is not True:
+                t = time.time()
+                d = t - c
+                return self.within - d + 1
+            else:
+                return self.within + 1
+        return 60
     @classmethod
     def valid(cls):
         if cls.sensor and not _changed_within(cls.sensor, cls.within):
@@ -192,8 +203,15 @@ class Home(prdb.Owner, updater.Updated):
             if _most_recent(state.sensor, *sensors):
                 return state
     def next_update_in_seconds(self):
-        return 1 # update once a second
+        if self.pending:
+            #_debug('pending, queuing in 1')
+            return 1 # update once a second if stuff happens often
+        return self.state.next_update_in_seconds()
+    def some_object_changed(self):
+        self.pending = True
+        self.next_update_in_seconds_changed()
     def update(self, *unused):
+        self.pending = False
         cls = self.determine_state_class()
         if not cls or not cls.valid():
             cls = TimeoutState
@@ -235,17 +253,18 @@ def _object_added(**kwargs):
 
 def _object_changed(o, key, old, new, **kwargs):
     _debug('object_change: %s/%s: %s=>%s %s' % (o.id, key, old, new, kwargs))
+    h.some_object_changed()
 
 _prdb_kh.Home.set_create_owner_instance_callback(Home)
 _debug('creating official database instance')
 db = kh.get_database()
+h = _prdb_kh.Home.new_named().get_owner()
 db.object_added.connect(_object_added)
 db.object_changed.connect(_object_changed)
 
 khserver.start()
 if socket.gethostname() == 'poro.lan':
     poroserver.start()
-h = _prdb_kh.Home.new_named().get_owner()
 updater.add(h)
 
 # threads will implicitly do their stuff ..
