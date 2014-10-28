@@ -74,7 +74,7 @@ else:
                 v = True
             elif v == 'False':
                 v = False
-            db.get(ok).set(kk, v)
+            db.get_by_oid(ok).set(kk, v)
         else:
             l = k.split('/')
             if len(l) > 1:
