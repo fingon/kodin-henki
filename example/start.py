@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Tue Oct 28 09:00:17 2014 mstenber
-# Edit time:     245 min
+# Last modified: Tue Oct 28 16:03:55 2014 mstenber
+# Edit time:     249 min
 #
 """
 
@@ -93,24 +93,30 @@ class HomeState:
         t = time.time()
         if self.sensor and self.within:
             c = _last_changed(self.sensor)
-            #_debug('got sensor+within: %s, %s', c, self.within)
-            if c is not True:
-                nt = c + self.within + 1
-            else:
-                nt = t + self.within + 1
+            if c:
+                #_debug('got sensor+within: %s, %s', c, self.within)
+                if c is not True:
+                    nt = c + self.within + 1
+                else:
+                    nt = t + self.within + 1
         for sensor, (light, timeout) in self.lights_conditional.items():
             c = _last_changed(sensor)
-            if c is True:
-                nt2 = t + timeout + 1
-            else:
-                nt2 = c + timeout + 1
-            if nt2 < t:
-                continue
-            if nt and nt2 > nt:
-                continue
-            nt = nt2
+            if c:
+                if c is True:
+                    nt2 = t + timeout + 1
+                else:
+                    nt2 = c + timeout + 1
+                if nt2 < t:
+                    continue
+                if nt and nt2 > nt:
+                    continue
+                # t <= nt2 [< nt if set]
+                # => take nt as the time to play
+                nt = nt2
         if nt:
-            return nt - t
+            d = nt - t
+            if d <= 300:
+                return nt - t
         return 60
     @classmethod
     def valid(cls):

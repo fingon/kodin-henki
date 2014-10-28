@@ -118,9 +118,9 @@ def _from_url_string(url, data):
     name = _wemo_string(doc, 'friendlyName', '?')
     o = cls.get_named(name)
     if o:
-        if o.url == url:
-            return o.get_owner()
         o = o.get_owner()
+        if o.url == url:
+            return o
     sol = list(doc.getElementsByTagName('service'))
     services = list([
             kodinhenki.wemo.service.from_url_object(url, o2)
