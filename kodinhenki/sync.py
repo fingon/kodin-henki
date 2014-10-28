@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Mon Oct 27 20:36:59 2014 mstenber
-# Edit time:     97 min
+# Last modified: Tue Oct 28 08:30:47 2014 mstenber
+# Edit time:     103 min
 #
 """
 
@@ -71,7 +71,7 @@ class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
             _debug('handling %s' % line)
             d = json.loads(line)
             if d[0] == 'log':
-                db.process_decoded_line(d[1])
+                db.process_decoded_line(d[1], by=BY)
             elif d[0] == 'sync_end':
                 in_sync()
             else:
@@ -102,9 +102,7 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
         self.db.dump_to_writer(r)
         self.send_update_one(r, 'sync_end')
     def db_object_changed(self, o, key, by, when, old, new):
-        # if self.client and by == BY: return
-        # wonder if this is really needed with prdb; with
-        # old db it was, to prevent loops..
+        if self.client and by == BY: return
 
         # Wonder if these should be buffered.. nahh..
         for r in self._receivers:
