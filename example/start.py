@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Tue Oct 28 16:03:55 2014 mstenber
-# Edit time:     249 min
+# Last modified: Wed Oct 29 11:51:09 2014 mstenber
+# Edit time:     251 min
 #
 """
 
@@ -60,6 +60,8 @@ SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
 #SENSOR_BUILT_IN_DELAY={}
 
 _seen_on = {}
+
+LOGDIR='/tmp/kh' # ramdisk on cer, ssd on pro
 
 def _last_changed(e):
     o = db.get_by_oid(e)
@@ -277,6 +279,10 @@ def _object_changed(o, key, old, new, **kwargs):
 _prdb_kh.Home.set_create_owner_instance_callback(Home)
 _debug('creating official database instance')
 db = kh.get_database()
+# Autorotate > megabyte sized ones
+if not os.path.exists(LOGDIR):
+    os.mkdir(LOGDIR)
+db.new_logger_to_directory(LOGDIR, autorotate=1000000)
 h = _prdb_kh.Home.new_named().get_owner()
 db.object_added.connect(_object_added)
 db.object_changed.connect(_object_changed)
