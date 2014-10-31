@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Fri Oct 31 10:45:00 2014 mstenber
-# Edit time:     14 min
+# Last modified: Fri Oct 31 19:30:13 2014 mstenber
+# Edit time:     15 min
 #
 """
 
@@ -50,6 +50,7 @@ def start():
                 #_itunes_pause()
                 # Hmm. Good idea? Maybe not, if listening to stuff on bed.
             elif new == 'AwayState':
+                _monitor_off()
                 _itunes_pause()
             elif new == 'ProjectorState':
                 # Further away from computer -> more volume

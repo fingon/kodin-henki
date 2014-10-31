@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Fri Oct 31 10:38:40 2014 mstenber
-# Edit time:     260 min
+# Last modified: Fri Oct 31 10:55:11 2014 mstenber
+# Edit time:     262 min
 #
 """
 
@@ -217,10 +217,11 @@ class Home(prdb.Owner, updater.Updated):
         st = xbmc and xbmc.get('on', None)
         if st: return ProjectorState
 
+        maybe_away = False
         c = _last_changed(PHONE)
         if c and c is not True:
             # We have seen it at some point, but it is not present now
-            return AwayState
+            maybe_away = True
 
         # XXX - this is temporary check because it seems that
         # user_active _and_ wemo events are sporadically wrong, and I
@@ -233,7 +234,11 @@ class Home(prdb.Owner, updater.Updated):
         sensors = [state.sensor for state in states]
         for state in states:
             if _most_recent(state.sensor, *sensors):
-                return state
+                c = _last_changed(state.sensor)
+                if not(maybe_away and c and c is not True and (time.time() - c > 600)):
+                    return state
+        if maybe_away:
+            return AwayState
     def next_update_in_seconds(self):
         if self.pending:
             #_debug('pending, queuing in 1')
