@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Mon Oct 27 21:33:39 2014 mstenber
-# Edit time:     12 min
+# Last modified: Fri Oct 31 10:33:34 2014 mstenber
+# Edit time:     13 min
 #
 """
 
@@ -30,6 +30,7 @@ import kodinhenki.hue as hue
 import kodinhenki.wemo.device_tracker as dt
 import kodinhenki.sync as sync
 import kodinhenki.updater as updater
+import kodinhenki.owrt_wifi as _owrt_wifi
 
 ip=None
 import socket
@@ -49,6 +50,9 @@ def start():
                        remote_ip='192.168.44.254',
                        discovery_port=54321,
                        event_port=8989))
+    if ip:
+        # We're CER => can check locally wifi state
+        _owrt_wifi.start()
 
 if __name__ == '__main__':
     start()

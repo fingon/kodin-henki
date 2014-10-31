@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Wed Oct 29 11:51:09 2014 mstenber
-# Edit time:     251 min
+# Last modified: Fri Oct 31 10:38:40 2014 mstenber
+# Edit time:     260 min
 #
 """
 
@@ -46,6 +46,7 @@ import kodinhenki.prdb_kh as _prdb_kh
 # activity sources
 IP='.kh.user_active.poro'
 WM='.kh.wemo_motion.WeMo Motion'
+PHONE='.kh.wifi.iphone5'
 
 # lights to be controlled
 LB='.kh.hue.Bed'
@@ -166,6 +167,11 @@ class MobileState(HomeState):
         # n/a also here, as this may run on cer
         pass
 
+class AwayState(HomeState):
+    # Just operate the motion sensor triggered ones, if there is motion
+    # (if it gets triggered, our state should change soon-ish anyway)
+    lights_conditional = {LC: (WM, 300), WT: (WM, 900)}
+
 class ComputerState(HomeState):
     " Unidle at one of the computers. "
     within = 3600 * 3 # within 3 hours
@@ -210,6 +216,11 @@ class Home(prdb.Owner, updater.Updated):
         xbmc = _prdb_kh.Process.get_named('xbmc')
         st = xbmc and xbmc.get('on', None)
         if st: return ProjectorState
+
+        c = _last_changed(PHONE)
+        if c and c is not True:
+            # We have seen it at some point, but it is not present now
+            return AwayState
 
         # XXX - this is temporary check because it seems that
         # user_active _and_ wemo events are sporadically wrong, and I
@@ -269,6 +280,10 @@ class Home(prdb.Owner, updater.Updated):
         for o, state in changed_state.items():
             o.set('on', state)
 
+        # Make sure this gets written to disk. As good point as any?
+        # (if we actually had any changes..)
+        logger.flush()
+
 def _object_added(**kwargs):
     _debug('object_added %s' % repr(kwargs))
 
@@ -282,7 +297,7 @@ db = kh.get_database()
 # Autorotate > megabyte sized ones
 if not os.path.exists(LOGDIR):
     os.mkdir(LOGDIR)
-db.new_logger_to_directory(LOGDIR, autorotate=1000000)
+logger = db.new_logger_to_directory(LOGDIR, autorotate=1000000)
 h = _prdb_kh.Home.new_named().get_owner()
 db.object_added.connect(_object_added)
 db.object_changed.connect(_object_changed)

@@ -1,0 +1,18 @@
+{
+	"freq": 2432,
+	"clients": {
+		"33:44:55:66:77:88": {
+			"auth": true,
+			"assoc": true,
+			"authorized": true,
+			"preauth": false,
+			"wds": false,
+			"wmm": true,
+			"ht": true,
+			"vht": false,
+			"wps": false,
+			"mfp": false,
+			"aid": 2
+		}
+	}
+}

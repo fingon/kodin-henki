@@ -1,0 +1,54 @@
+package dhcp
+
+config dnsmasq
+	option domainneeded '1'
+	option boguspriv '1'
+	option filterwin2k '1'
+	option localise_queries '1'
+	option rebind_protection '1'
+	option rebind_localhost '1'
+	option local '/lan/'
+	option domain 'lan'
+	option expandhosts '1'
+	option nonegcache '0'
+	option authoritative '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+	option resolvfile '/tmp/resolv.conf.auto'
+
+config dhcp 'lan'
+	option interface 'lan'
+	option start '150'
+	option limit '200'
+	option leasetime '12h'
+	option dhcpv6 'server'
+	option ra 'server'
+	option ra_management '1'
+
+config dhcp 'wan'
+	option interface 'wan'
+	option start '100'
+	option limit '150'
+	option leasetime '12h'
+
+config odhcpd 'odhcpd'
+	option maindhcp '0'
+	option leasefile '/tmp/hosts/odhcpd'
+	option leasetrigger '/usr/sbin/odhcpd-update'
+
+config host
+	option name 'iphone5'
+	option mac '11:22:33:44:55:66'
+	option ip '192.168.42.251'
+
+config host
+	option name 'ipadmini'
+	option mac '22:33:44:55:66:77'
+	option ip '192.168.42.252'
+
+config dhcp
+	option start '100'
+	option leasetime '12h'
+	option limit '150'
+	option interface 'jail'
+	option force '1'

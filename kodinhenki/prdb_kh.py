@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Mon Oct 27 21:07:58 2014 mstenber
-# Edit time:     4 min
+# Last modified: Fri Oct 31 09:52:29 2014 mstenber
+# Edit time:     5 min
 #
 """
 
@@ -36,3 +36,5 @@ Process = KH.declare_class('process')
 Home = KH.declare_class('home')
 
 UserActive = KH.declare_class('user_active')
+
+WifiDevice = KH.declare_class('wifi')
