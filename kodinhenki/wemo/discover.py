@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:45:37 2014 mstenber
-# Last modified: Fri Oct 17 18:59:07 2014 mstenber
-# Edit time:     68 min
+# Last modified: Thu Nov  6 18:20:03 2014 mstenber
+# Edit time:     69 min
 #
 """
 
@@ -93,7 +93,7 @@ class DiscoveryHandler(_socketserver.BaseRequestHandler):
         client_address = self.client_address[0]
         h = parse_http_header(data)
         if h:
-            _debug('header %s' % repr(h))
+            _debug('header %s', h)
             ua = h.get('x-user-agent', None)
             loc = h.get('location', None)
             if ua == 'redsonic' and loc:

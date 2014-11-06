@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Mon Oct 27 22:32:02 2014 mstenber
-# Edit time:     143 min
+# Last modified: Thu Nov  6 18:22:09 2014 mstenber
+# Edit time:     144 min
 #
 """
 
@@ -63,10 +63,10 @@ class HueUpdater(prdb.Owner, updater.Updated):
     _b = None
 
     def bulb_changed(self, b, key, new, by, **kwargs):
-        _debug('bulb_changed %s %s %s %s' % (b, key, new, by))
+        _debug('bulb_changed %s %s %s %s', b, key, new, by)
         if not (key == 'on' and by != BY_US):
             return
-        _debug('setting light state %s=%s' % (b.o.light_name, new))
+        _debug('setting light state %s=%s', b.o.light_name, new)
         light_name = b.o.get('light_name')
         b = self.get_bridge(force=self.dynamically_update_lights)
         d = b.get_light_objects(mode='name')

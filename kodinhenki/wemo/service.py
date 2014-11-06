@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 18:14:32 2014 mstenber
-# Last modified: Tue Oct 14 10:28:20 2014 mstenber
+# Last modified: Thu Nov  6 18:21:43 2014 mstenber
 # Edit time:     42 min
 #
 """
@@ -65,7 +65,7 @@ class Action:
 </soap:Envelope>''' % locals()
         headers = {'SOAPAction': '"%s#%s"' % (service, action),
         'Content-Type': 'text/xml'}
-        _debug('url:%s - headers:%s - data:%s' % (self.url, headers, data))
+        _debug('url:%s - headers:%s - data:%s', self.url, headers, data)
         req = urllib_request.Request(self.url, data.encode('utf-8'), headers)
         try:
             data = urlopen(req, None, 5).read()
@@ -100,7 +100,7 @@ class Service:
             pass
         self.populated = True
         assert self.scdp
-        #_debug('got sdata: %s' % repr(data))
+        #_debug('got sdata: %s', data)
         doc = parseString(data)
         assert doc
         _wemo_string = kodinhenki.wemo.device._wemo_string

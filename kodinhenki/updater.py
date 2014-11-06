@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Fri Oct 10 15:56:30 2014 mstenber
+# Last modified: Thu Nov  6 18:22:39 2014 mstenber
 # Edit time:     31 min
 #
 """
@@ -56,7 +56,7 @@ def add(o):
     if nu is None:
         return
     if nu <= 0:
-        nu = 1 
+        nu = 1
     def _run():
         with _queue_lock:
             # If the object somehow disappeared/changed in queue, do nothing
@@ -72,7 +72,7 @@ def add(o):
                 remove(o)
                 add(o)
     t = threading.Timer(nu, _run)
-    _debug('adding in %s:%s = %s' % (nu, _run, t))
+    _debug('adding in %s:%s = %s', nu, _run, t)
     with _queue_lock:
         assert not o in _queue
         t.start()
@@ -85,7 +85,7 @@ def remove(o):
     assert isinstance(o, Updated)
     with _queue_lock:
         assert o in _queue
-        _debug('canceling %s' % o)
+        _debug('canceling %s', o)
         _queue[o].cancel()
         del _queue[o]
 

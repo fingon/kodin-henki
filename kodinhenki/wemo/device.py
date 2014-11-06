@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Mon Oct 27 22:29:03 2014 mstenber
+# Last modified: Thu Nov  6 18:20:29 2014 mstenber
 # Edit time:     58 min
 #
 """
@@ -47,6 +47,7 @@ device_added = Signal()
 class WemoBase(prdb.Owner):
     _subscription = None # Event subscription, handled externally
     ip = None
+    url = None
     def is_on(self):
         return self.o.get('on')
     def set_services(self, services):
@@ -104,7 +105,7 @@ def _wemo_string(o, n, default=None):
 def _from_url_string(url, data):
     doc = parseString(data)
     assert doc
-    #_debug('got device: %s' % repr(doc))
+    #_debug('got device: %s', doc)
     udn = _wemo_string(doc, 'UDN')
     if not udn:
         _debug(' no UDN')
@@ -113,7 +114,7 @@ def _from_url_string(url, data):
         if udn.startswith(prefix):
             break
     else:
-        _debug(' no UDN match:%s' % udn)
+        _debug(' no UDN match:%s', udn)
         return
     name = _wemo_string(doc, 'friendlyName', '?')
     o = cls.get_named(name)

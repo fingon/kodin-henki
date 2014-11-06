@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 06:34:17 2014 mstenber
-# Last modified: Sat Oct 11 12:16:59 2014 mstenber
+# Last modified: Thu Nov  6 18:21:30 2014 mstenber
 # Edit time:     103 min
 #
 """
@@ -55,16 +55,16 @@ class CustomMethodRequest(_request.Request):
 class EventHandler(_httpserver.BaseHTTPRequestHandler):
     def do_NOTIFY(self):
         _debug('EventHandler.handle')
-        _debug(' client_address:%s' % repr(self.client_address))
+        _debug(' client_address:%s', self.client_address)
         (ip, port) = self.client_address
-        _debug(' headers:%s' % repr(self.headers))
+        _debug(' headers:%s', self.headers)
         lines = []
         for line in self.rfile:
             if not line.strip():
                 break
             lines.append(line)
         data = b''.join(lines)
-        _debug(' data:%s' % repr(data))
+        _debug(' data:%s', data)
         doc = parseString(data)
         # XXX - if we wanted to be generic, we could do magic here.
         # However, as I cannot be bothered, I am just looking for the
@@ -116,7 +116,8 @@ class Subscription(kodinhenki.updater.Updated):
         return self.subscription_valid_until - now
     def _subscribe(self):
         server_address = self.receiver['server'].server_address
-        _debug('subscribing to %s (and receiving at %s) - sid:%s' % (self.url, server_address, self.sid))
+        _debug('subscribing to %s (and receiving at %s) - sid:%s',
+               self.url, server_address, self.sid)
         (ip, port) = server_address
         headers = {'Timeout': 'Second-%d' % self.default_seconds,
                    'Callback': '<http://%s:%d>' % (ip, port),
@@ -133,7 +134,7 @@ class Subscription(kodinhenki.updater.Updated):
             data = b''
             info = {}
         result = {}
-        _debug(' %s/%s' % (info, data))
+        _debug(' %s/%s', info, data)
         for k, v in info.items():
             kl = k.lower()
             if kl == 'timeout':

@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Mon Oct 27 21:11:14 2014 mstenber
+# Last modified: Thu Nov  6 18:20:47 2014 mstenber
 # Edit time:     122 min
 #
 """
@@ -68,14 +68,14 @@ class WemoTracker(prdb.Owner, updater.Updated):
             if o.ip == ip:
                 o.o.set('on', state, by=_wemo.BY)
                 return
-        _debug('unknown device - ip=%s' % ip)
+        _debug('unknown device - ip=%s', ip)
     def device_seen(self, url, **kwargs):
         o = self._devices.get(url, None) or self.probe(url)
         if not o: return
         self._devices[url]['last_seen'] = time.time()
-        _debug('marking seen: %s' % o)
+        _debug('marking seen: %s', o)
     def probe(self, url):
-        _debug('probing new url: %s' % url)
+        _debug('probing new url: %s', url)
         o = kodinhenki.wemo.device.from_url(url)
         if not o: return
         if self.event_receiver is not None:
@@ -106,7 +106,7 @@ class WemoTracker(prdb.Owner, updater.Updated):
         # Filter out devices that have not been seen in awhile
         for url, d in list(self._devices.items()):
             if d['last_seen'] < (now - self.devices_valid_for):
-                _debug('getting rid of %s - too historic' % repr(d))
+                _debug('getting rid of %s - too historic', d)
                 del self._devices[url]
 
 _prdb_kh.WemoTracker.set_create_owner_instance_callback(WemoTracker)

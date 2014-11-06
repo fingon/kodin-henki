@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:25:26 2014 mstenber
-# Last modified: Mon Oct 27 21:27:31 2014 mstenber
+# Last modified: Thu Nov  6 18:22:43 2014 mstenber
 # Edit time:     26 min
 #
 """
@@ -44,7 +44,7 @@ def _start_reader_thread(command, callback, autostart=False):
                                  stdout=subprocess.PIPE, bufsize=1, close_fds=True)
             for line in p.stdout:
                 line = line.decode().strip()
-                #_debug('got %s' % line)
+                #_debug('got %s', line)
                 callback(line)
             if autostart:
                 _error('popen died - restarting')

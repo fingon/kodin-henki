@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Tue Oct 28 08:30:47 2014 mstenber
+# Last modified: Thu Nov  6 18:22:30 2014 mstenber
 # Edit time:     103 min
 #
 """
@@ -58,7 +58,7 @@ class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
     def setup(self):
         _socketserver.StreamRequestHandler.setup(self)
         self.server.add_receiver(self)
-        _debug('initialized %s' % self)
+        _debug('initialized %s', self)
     def handle(self):
         db = self.server.db
         while True:
@@ -68,7 +68,7 @@ class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
                 return
             if not line:
                 break
-            _debug('handling %s' % line)
+            _debug('handling %s', line)
             d = json.loads(line)
             if d[0] == 'log':
                 db.process_decoded_line(d[1], by=BY)
@@ -81,7 +81,7 @@ class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
         self.server.send_update_one(self, 'log', data)
     def finish(self):
         self.server.remove_receiver(self)
-        _debug('finished %s' % self)
+        _debug('finished %s', self)
 
 class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
     # .. for the socketserver superclasses ..
@@ -109,7 +109,7 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
             self.send_update_one(r, 'log', (when, o.id, {key: new}))
     def send_update_one(self, r, *args):
         s = json.dumps(args)
-        _debug('sending %s' % s)
+        _debug('sending %s', s)
         b = s.encode('utf-8') + b'\n'
         r.wfile.write(b)
 
