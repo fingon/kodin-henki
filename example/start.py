@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Fri Oct 31 10:55:11 2014 mstenber
-# Edit time:     262 min
+# Last modified: Thu Nov  6 18:23:47 2014 mstenber
+# Edit time:     267 min
 #
 """
 
@@ -46,7 +46,7 @@ import kodinhenki.prdb_kh as _prdb_kh
 # activity sources
 IP='.kh.user_active.poro'
 WM='.kh.wemo_motion.WeMo Motion'
-PHONE='.kh.wifi.iphone5'
+PHONES=['.kh.wifi.iphone5', '.kh.wifi.nexus5']
 
 # lights to be controlled
 LB='.kh.hue.Bed'
@@ -193,7 +193,7 @@ class NightState(ProjectorState):
 
 def _most_recent(e, *el):
     c = _last_changed(e)
-    #_debug('_most_recent for %s: %s' % (e, c))
+    #_debug('_most_recent for %s: %s', e, c)
     if c is None:
         return False
     if c is True:
@@ -218,10 +218,7 @@ class Home(prdb.Owner, updater.Updated):
         if st: return ProjectorState
 
         maybe_away = False
-        c = _last_changed(PHONE)
-        if c and c is not True:
-            # We have seen it at some point, but it is not present now
-            maybe_away = True
+        present_phones = [x for x in PHONES if _last_changed(x) is True]
 
         # XXX - this is temporary check because it seems that
         # user_active _and_ wemo events are sporadically wrong, and I
@@ -235,9 +232,9 @@ class Home(prdb.Owner, updater.Updated):
         for state in states:
             if _most_recent(state.sensor, *sensors):
                 c = _last_changed(state.sensor)
-                if not(maybe_away and c and c is not True and (time.time() - c > 600)):
+                if not(not present_phones and c and c is not True and (time.time() - c > 600)):
                     return state
-        if maybe_away:
+        if not present_phones:
             return AwayState
     def next_update_in_seconds(self):
         if self.pending:
@@ -269,7 +266,7 @@ class Home(prdb.Owner, updater.Updated):
                     changed_state[o] = state
         if not changed_state:
             return
-        _debug('changing state: %s' % repr(changed_state))
+        _debug('changing state: %s', changed_state)
         # XXX - not elegant, but make sure the hue hasn't changed under us..
         # WeMo notifications should be ~real time, Hue NOT.
         hue_changed = [False]
@@ -290,10 +287,10 @@ class Home(prdb.Owner, updater.Updated):
         logger.flush()
 
 def _object_added(**kwargs):
-    _debug('object_added %s' % repr(kwargs))
+    _debug('object_added %s', kwargs)
 
 def _object_changed(o, key, old, new, **kwargs):
-    _debug('object_change: %s/%s: %s=>%s %s' % (o.id, key, old, new, kwargs))
+    _debug('object_change: %s/%s: %s=>%s %s', o.id, key, old, new, kwargs)
     h.some_object_changed()
 
 _prdb_kh.Home.set_create_owner_instance_callback(Home)
