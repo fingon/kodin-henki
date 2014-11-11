@@ -7,7 +7,7 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Thu Nov  6 18:23:47 2014 mstenber
+# Last modified: Mon Nov 10 18:15:39 2014 mstenber
 # Edit time:     267 min
 #
 """
@@ -46,7 +46,7 @@ import kodinhenki.prdb_kh as _prdb_kh
 # activity sources
 IP='.kh.user_active.poro'
 WM='.kh.wemo_motion.WeMo Motion'
-PHONES=['.kh.wifi.iphone5', '.kh.wifi.nexus5']
+PHONES=['.kh.wifi.iphone6', '.kh.wifi.nexus5']
 
 # lights to be controlled
 LB='.kh.hue.Bed'
