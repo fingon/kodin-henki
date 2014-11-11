@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Fri Oct 31 09:52:29 2014 mstenber
-# Edit time:     5 min
+# Last modified: Tue Nov 11 16:46:51 2014 mstenber
+# Edit time:     8 min
 #
 """
 
@@ -38,3 +38,5 @@ Home = KH.declare_class('home')
 UserActive = KH.declare_class('user_active')
 
 WifiDevice = KH.declare_class('wifi')
+
+WebCamAmbientLight = KH.declare_class('webcam_light')
