@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Nov 11 16:07:59 2014 mstenber
-# Last modified: Tue Nov 11 16:45:58 2014 mstenber
-# Edit time:     17 min
+# Last modified: Thu Nov 13 14:03:21 2014 mstenber
+# Edit time:     18 min
 #
 """
 
@@ -45,6 +45,9 @@ alternatively noise-based detection of how dark the place is..
 
 import cv2
 import numpy
+import prdb
+
+import kodinhenki.updater as _updater
 
 def get_image():
     vc = cv2.VideoCapture()
@@ -65,10 +68,11 @@ def get_brightness():
     b = numpy.median(numpy.inner(image, numpy.array([0.299, 0.587, 0.114])))
     return b
 
-class WebCamMonitor(prdb.Owner, updater.Updated):
+class WebCamMonitor(prdb.Owner, _updater.Updated):
+    pass
 
 def start():
-
+    pass
 
 if __name__ == '__main__':
     import time
