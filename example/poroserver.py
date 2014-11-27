@@ -7,7 +7,7 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Fri Oct 31 19:30:13 2014 mstenber
+# Last modified: Thu Nov 27 17:10:07 2014 mstenber
 # Edit time:     15 min
 #
 """
@@ -36,7 +36,7 @@ def _set_volume(n):
     os.system('osascript -e "set Volume %d"' % n)
 
 def start():
-    process.start({'xbmc': 'XBMC', 'emacs': 'Emacs.app'})
+    process.start({'xbmc': 'XBMC.app/Contents', 'emacs': 'Emacs.app/Contents'})
     user_active.start('poro')
     def _f(o, key, old, new, **kwargs):
         if o.id == '.kh.home.' and key == 'state_name':
