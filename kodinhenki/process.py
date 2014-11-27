@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:10:38 2014 mstenber
-# Last modified: Mon Oct 27 21:28:04 2014 mstenber
+# Last modified: Thu Nov 27 17:11:20 2014 mstenber
 # Edit time:     16 min
 #
 """
@@ -31,7 +31,7 @@ logger = logging.getLogger('kh.user_active')
 _debug = logger.debug
 _error = logger.error
 
-PS_STRING = 'ps awx'
+PS_STRING = 'ps awwx'
 
 class ProcessMonitor(updater.Updated):
     def __init__(self, pdict):
