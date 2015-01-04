@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Thu Nov  6 18:20:47 2014 mstenber
-# Edit time:     122 min
+# Last modified: Sun Jan  4 15:07:55 2015 mstenber
+# Edit time:     126 min
 #
 """
 
@@ -69,6 +69,8 @@ class WemoTracker(prdb.Owner, updater.Updated):
                 o.o.set('on', state, by=_wemo.BY)
                 return
         _debug('unknown device - ip=%s', ip)
+        send_discover()
+        self.last_discovery = time.time()
     def device_seen(self, url, **kwargs):
         o = self._devices.get(url, None) or self.probe(url)
         if not o: return
