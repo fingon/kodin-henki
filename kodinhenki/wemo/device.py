@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Sep 27 17:55:50 2014 mstenber
-# Last modified: Thu Nov  6 18:20:29 2014 mstenber
+# Last modified: Wed Jan  7 14:57:38 2015 mstenber
 # Edit time:     58 min
 #
 """
@@ -70,9 +70,9 @@ class WemoSwitch(WemoBase):
         s = v and '1' or '0'
         return self.services['basicevent'].SetBinaryState(BinaryState=s)
     def turn_on(self):
-        self.set('on', True)
+        self.o.set('on', True)
     def turn_off(self):
-        self.set('on', False)
+        self.o.set('on', False)
 
 _prdb_kh.WemoSwitch.set_create_owner_instance_callback(WemoSwitch)
 

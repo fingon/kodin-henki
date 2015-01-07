@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Nov 10 18:15:39 2014 mstenber
-# Edit time:     267 min
+# Last modified: Wed Jan  7 15:08:25 2015 mstenber
+# Edit time:     269 min
 #
 """
 
@@ -206,7 +206,7 @@ def _most_recent(e, *el):
             return False
     return True
 
-class Home(prdb.Owner, updater.Updated):
+class Home(prdb.Owner, _prdb_kh.LockedUpdated):
     state = HomeState()
     def determine_state_class(self):
         """ This is the main place where we determine the overall
@@ -236,7 +236,7 @@ class Home(prdb.Owner, updater.Updated):
                     return state
         if not present_phones:
             return AwayState
-    def next_update_in_seconds(self):
+    def locked_next_update_in_seconds(self):
         if self.pending:
             #_debug('pending, queuing in 1')
             return 1 # update once a second if stuff happens often
@@ -244,7 +244,7 @@ class Home(prdb.Owner, updater.Updated):
     def some_object_changed(self):
         self.pending = True
         self.next_update_in_seconds_changed()
-    def update(self, *unused):
+    def locked_update(self, *unused):
         self.pending = False
         cls = self.determine_state_class()
         if not cls or not cls.valid():
@@ -304,9 +304,16 @@ h = _prdb_kh.Home.new_named().get_owner()
 db.object_added.connect(_object_added)
 db.object_changed.connect(_object_changed)
 
-khserver.start()
-if socket.gethostname() == 'poro.lan':
-    poroserver.start()
+# Up to this point we do not have threads really running, so start
+# caring about locking only now..
+_prdb_kh.set_lock_check_enabled(True)
+
+with _prdb_kh.lock:
+    khserver.start()
+    if socket.gethostname() == 'poro.lan':
+        poroserver.start()
+
+
 updater.add(h)
 
 # threads will implicitly do their stuff ..

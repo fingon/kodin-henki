@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Sun Jan  4 15:07:55 2015 mstenber
-# Edit time:     126 min
+# Last modified: Wed Jan  7 14:49:55 2015 mstenber
+# Edit time:     128 min
 #
 """
 
@@ -63,11 +63,12 @@ class WemoTracker(prdb.Owner, updater.Updated):
         if self.discovery_thread:
             self.discovery_thread.stop()
     def device_state_event(self, ip, state):
-        for url, d in self._devices.items():
-            o = d['o']
-            if o.ip == ip:
-                o.o.set('on', state, by=_wemo.BY)
-                return
+        with _prdb_kh.lock:
+            for url, d in self._devices.items():
+                o = d['o']
+                if o.ip == ip:
+                    o.o.set('on', state, by=_wemo.BY)
+                    return
         _debug('unknown device - ip=%s', ip)
         send_discover()
         self.last_discovery = time.time()
@@ -78,20 +79,21 @@ class WemoTracker(prdb.Owner, updater.Updated):
         _debug('marking seen: %s', o)
     def probe(self, url):
         _debug('probing new url: %s', url)
-        o = kodinhenki.wemo.device.from_url(url)
-        if not o: return
-        if self.event_receiver is not None:
-            full_url = urljoin(url, o.services['basicevent'].event_sub_url)
-            s = event.Subscription(full_url, self.event_receiver)
-            updater.add(s)
-            # Even if we reuse the object (and we should
-            # have only one device per physical object), re-probing
-            # should not duplicate subscriptions. So kill the subscription.
-            if o._subscription:
-                updater.remove(o._subscription)
-            o._subscription = s
-        self._devices[url] = {'o': o}
-        return o
+        with _prdb_kh.lock:
+            o = kodinhenki.wemo.device.from_url(url)
+            if not o: return
+            if self.event_receiver is not None:
+                full_url = urljoin(url, o.services['basicevent'].event_sub_url)
+                s = event.Subscription(full_url, self.event_receiver)
+                updater.add(s)
+                # Even if we reuse the object (and we should
+                # have only one device per physical object), re-probing
+                # should not duplicate subscriptions. So kill the subscription.
+                if o._subscription:
+                    updater.remove(o._subscription)
+                o._subscription = s
+            self._devices[url] = {'o': o}
+            return o
 
     # Updated interface
     def next_update_in_seconds(self):

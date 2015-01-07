@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:10:38 2014 mstenber
-# Last modified: Thu Nov 27 17:11:20 2014 mstenber
-# Edit time:     16 min
+# Last modified: Wed Jan  7 14:47:50 2015 mstenber
+# Edit time:     17 min
 #
 """
 
@@ -43,11 +43,13 @@ class ProcessMonitor(updater.Updated):
         return 30 # hardcoded, but oh well
     def update(self):
         with os.popen(PS_STRING, 'r') as psfile:
-            lines = list(psfile)
+            self.update_lines(list(psfile))
+    def update_lines(self, lines):
         # We _know_ the objects exist
-        for name, match in self.pdict.items():
-            on = True if any (match in l for l in lines) else False
-            _prdb_kh.Process.get_named(name).on=on
+        with _prdb_kh.lock:
+            for name, match in self.pdict.items():
+                on = True if any (match in l for l in lines) else False
+                _prdb_kh.Process.get_named(name).on=on
 
 def start(d):
     _debug('starting process %s', repr(d))

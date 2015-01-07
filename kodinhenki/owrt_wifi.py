@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Fri Oct 31 09:50:42 2014 mstenber
-# Last modified: Fri Oct 31 10:42:06 2014 mstenber
-# Edit time:     24 min
+# Last modified: Wed Jan  7 14:45:04 2015 mstenber
+# Edit time:     26 min
 #
 """
 
@@ -108,8 +108,9 @@ class OpenWrtWifiDeviceTracker(_updater.Updated):
                 continue
             self._devices[n] = t
     def update_state(self, t):
-        for n, st in self._devices.items():
-            _prdb_kh.WifiDevice.new_named(n).on = (st == t)
+        with _prdb_kh.lock:
+            for n, st in self._devices.items():
+                _prdb_kh.WifiDevice.new_named(n).on = (st == t)
 
 
 

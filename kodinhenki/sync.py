@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Thu Nov  6 18:22:30 2014 mstenber
-# Edit time:     103 min
+# Last modified: Wed Jan  7 14:33:35 2015 mstenber
+# Edit time:     109 min
 #
 """
 
@@ -34,6 +34,7 @@ where:
 import prdb
 import kodinhenki as kh
 from kodinhenki.util import Signal
+import kodinhenki.prdb_kh as _prdb
 
 import kodinhenki.compat as compat
 _socketserver = compat.get_socketserver()
@@ -71,7 +72,8 @@ class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
             _debug('handling %s', line)
             d = json.loads(line)
             if d[0] == 'log':
-                db.process_decoded_line(d[1], by=BY)
+                with _prdb.lock:
+                    db.process_decoded_line(d[1], by=BY)
             elif d[0] == 'sync_end':
                 in_sync()
             else:
@@ -98,8 +100,9 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
         self.db.object_changed.connect(self.db_object_changed)
         #self.db.object_removed.connect(self.db_object_removed)
     def add_receiver(self, r):
-        self._receivers.append(r)
-        self.db.dump_to_writer(r)
+        with _prdb.lock:
+            self._receivers.append(r)
+            self.db.dump_to_writer(r)
         self.send_update_one(r, 'sync_end')
     def db_object_changed(self, o, key, by, when, old, new):
         if self.client and by == BY: return

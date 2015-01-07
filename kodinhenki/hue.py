@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Thu Nov  6 18:22:09 2014 mstenber
-# Edit time:     144 min
+# Last modified: Wed Jan  7 15:07:20 2015 mstenber
+# Edit time:     147 min
 #
 """
 
@@ -28,7 +28,7 @@ BULB_NAME='%s.%s'
 import prdb
 import kodinhenki
 import kodinhenki.prdb_kh as _prdb_kh
-import kodinhenki.updater as updater
+import kodinhenki.updater as _updater
 import phue
 import time
 
@@ -50,7 +50,7 @@ class HueBulb(prdb.Owner):
 
 _prdb_kh.HueBulb.set_create_owner_instance_callback(HueBulb)
 
-class HueUpdater(prdb.Owner, updater.Updated):
+class HueUpdater(prdb.Owner, _updater.Updated):
     # How long do we believe in the 'current' timestamp?
     # (in seconds)
     light_check_interval = 30
@@ -90,7 +90,8 @@ class HueUpdater(prdb.Owner, updater.Updated):
         lobs = b.get_light_objects(mode='name')
         for name, light in lobs.items():
             is_on = light.on
-            bulb = _prdb_kh.HueBulb.new_named(name, light_name=name, on=is_on).get_owner()
+            with _prdb_kh.lock:
+                bulb = _prdb_kh.HueBulb.new_named(name, light_name=name, on=is_on).get_owner()
         self._lights_dirty_after = time.time() + self.light_check_interval
         # we're automatically readded post-update
 

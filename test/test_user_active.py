@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:36:37 2014 mstenber
-# Last modified: Mon Oct 27 21:04:12 2014 mstenber
-# Edit time:     5 min
+# Last modified: Wed Jan  7 15:04:34 2015 mstenber
+# Edit time:     6 min
 #
 """
 
@@ -20,11 +20,16 @@ This is somewhat tricky to test for real..
 
 import kodinhenki
 import kodinhenki.user_active as user_active
+import kodinhenki.prdb_kh as _prdb
 
 def test_user_active():
-    kodinhenki.drop_database() # in case previous thing played with it
-    kodinhenki.get_database() # declare schema again
+    _old = _prdb.set_lock_check_enabled(True)
+    with _prdb.lock:
+        kodinhenki.drop_database() # in case previous thing played with it
+        kodinhenki.get_database() # declare schema again
     o = user_active.start('ua')
-    o.o.get('on')
+    with _prdb.lock:
+        o.o.get('on')
     o.stop()
+    _prdb.set_lock_check_enabled(_old)
 

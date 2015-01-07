@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:25:26 2014 mstenber
-# Last modified: Thu Nov  6 18:22:43 2014 mstenber
-# Edit time:     26 min
+# Last modified: Wed Jan  7 15:02:54 2015 mstenber
+# Edit time:     27 min
 #
 """
 
@@ -66,12 +66,14 @@ class UserActivityMonitor(prdb.Owner):
     def init(self):
         pass
     def handle_state(self, state):
-        if state == '0':
-            self.o.set('on', False)
-        elif state == '1':
-            self.o.set('on', True)
-        else:
-            raise NotImplementedError("weird state:%s" % state)
+        with _prdb_kh.lock:
+            if state == '0':
+                self.o.set('on', False)
+                return
+            elif state == '1':
+                self.o.set('on', True)
+                return
+        raise NotImplementedError("weird state:%s" % state)
     def start(self):
         t = str(user_active_period * 10) # sleepwatcher wants 10ths of second
         self._thread = _start_reader_thread([sleepwatcher, '-t', t,
@@ -93,7 +95,8 @@ def start(name, db=None):
     _debug('starting user_active %s', name)
     now_idle = int(os.popen(sleepwatcher + ' -g').read()) / 10.0
     state = now_idle <= user_active_period and True or False
-    o = _prdb_kh.UserActive.new_named(name, on=state).get_owner()
-    o.start()
-    return o
+    with _prdb_kh.lock:
+        o = _prdb_kh.UserActive.new_named(name, on=state).get_owner()
+        o.start()
+        return o
 

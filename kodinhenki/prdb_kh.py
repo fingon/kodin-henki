@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Fri Oct 31 09:52:29 2014 mstenber
-# Edit time:     5 min
+# Last modified: Wed Jan  7 15:09:07 2015 mstenber
+# Edit time:     28 min
 #
 """
 
@@ -19,6 +19,9 @@ Kodinhenki schema declaration for prdb
 """
 
 import prdb
+import threading
+import types
+import kodinhenki.updater as _updater
 
 KH = prdb.App('kh', version=1)
 
@@ -38,3 +41,47 @@ Home = KH.declare_class('home')
 UserActive = KH.declare_class('user_active')
 
 WifiDevice = KH.declare_class('wifi')
+
+lock = threading.RLock()
+
+# Debug code to make sure lock IS used whenever accessing Object/Database
+import prdb.db as _db
+
+_enable_lock_check = False
+
+def _instrument_class_method_check_lock(cl, k):
+    v = getattr(cl, k)
+    if type(v) != types.FunctionType:
+        return
+    def _f(*args, **kwargs):
+        assert not _enable_lock_check or lock._is_owned()
+        return v(*args, **kwargs)
+    setattr(cl, k, _f)
+
+
+def _instrument_class_check_lock(cl, recurse=False):
+    for k in cl.__dict__.copy().keys():
+        _instrument_class_method_check_lock(cl, k)
+    if recurse:
+        _instrument_class_check_lock(super(cl), recurse)
+
+_instrument_class_check_lock(_db.Database)
+_instrument_class_check_lock(_db.Object)
+
+def set_lock_check_enabled(x):
+    global _enable_lock_check
+    old = _enable_lock_check
+    _enable_lock_check = x
+    return old
+
+class LockedUpdated(_updater.Updated):
+    def update(self, *args, **kwargs):
+        with lock:
+            return self.locked_update(*args, **kwargs)
+    def next_update_in_seconds(self):
+        with lock:
+            return self.locked_next_update_in_seconds()
+    def locked_next_update_in_seconds(self):
+        raise NotImplementedError
+    def locked_update(self):
+        raise NotImplementedError
