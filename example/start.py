@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Wed Jan  7 15:08:25 2015 mstenber
-# Edit time:     269 min
+# Last modified: Wed Jan 14 16:06:33 2015 mstenber
+# Edit time:     270 min
 #
 """
 
@@ -213,7 +213,7 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         'home state'. Later on, if the chosen state is not valid
         (mostly due to timeout), we will default to HomeState which
         means all off in any case."""
-        xbmc = _prdb_kh.Process.get_named('xbmc')
+        xbmc = _prdb_kh.Process.get_named('kodi')
         st = xbmc and xbmc.get('on', None)
         if st: return ProjectorState
 
