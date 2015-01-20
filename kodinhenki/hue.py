@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Wed Jan  7 15:07:20 2015 mstenber
-# Edit time:     147 min
+# Last modified: Mon Jan 19 11:53:56 2015 mstenber
+# Edit time:     148 min
 #
 """
 
@@ -77,7 +77,8 @@ class HueUpdater(prdb.Owner, _updater.Updated):
         self.mark_dirty()
     def get_bridge(self, force=False):
         if not self._b or force:
-            self._b = phue.Bridge(self.o.get('ip'))
+            with _prdb_kh.lock:
+                self._b = phue.Bridge(self.o.get('ip'))
         return self._b
     def mark_dirty(self):
         self._lights_dirty_after = 0
