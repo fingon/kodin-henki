@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Fri Oct 31 09:50:42 2014 mstenber
-# Last modified: Wed Jan  7 14:45:04 2015 mstenber
-# Edit time:     26 min
+# Last modified: Mon Jan 19 13:31:14 2015 mstenber
+# Edit time:     32 min
 #
 """
 
@@ -46,9 +46,15 @@ WIFI_POLL_INTERVAL=60
 class OpenWrtWifiDeviceTracker(_updater.Updated):
     _last_dhcp_poll = 0
     _last_wifi_poll = 0
-    def __init__(self, interfaces=['wlan0', 'wlan1']):
+    def __init__(self, interfaces=None):
         self._devices = {}
         self._dhcp = {}
+        # Get list of interfaces
+        if interfaces is None:
+            prefix='hostapd.'
+            data = list(os.popen("ubus list '%s*'" % prefix))
+            interfaces = [x.replace(prefix, '').strip() for x in data]
+            interfaces = [x for x in interfaces if len(x) > 0]
         self.interfaces = interfaces
     def next_update_in_seconds(self):
         t = time.time()
