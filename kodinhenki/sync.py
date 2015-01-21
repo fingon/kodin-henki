@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Wed Jan  7 14:33:35 2015 mstenber
-# Edit time:     109 min
+# Last modified: Thu Jan 22 00:15:33 2015 mstenber
+# Edit time:     123 min
 #
 """
 
@@ -54,10 +54,38 @@ in_sync = Signal()
 
 BY='sync'
 
+class SyncWriter:
+    stopped = False
+    def __init__(self, f):
+        self.f = f
+        self.queue = []
+        self.semaphore = threading.Semaphore()
+        self.start()
+    def start(self):
+        self.t = threading.Thread(target=self.write_loop)
+        self.t.daemon = True
+        self.t.start()
+    def stop(self):
+        self.stopped = True
+    def write(self, x):
+        self.queue.append(x)
+        self.semaphore.release()
+    def write_loop(self):
+        while not self.stopped:
+            while self.queue:
+                s = self.queue.pop(0)
+                try:
+                    self.f.write(s)
+                except:
+                    return
+            self.semaphore.acquire()
+
+
 # Note: This has to be in it's own thread or bad things happen ..
 class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
     def setup(self):
         _socketserver.StreamRequestHandler.setup(self)
+        self.writer = SyncWriter(self.wfile)
         self.server.add_receiver(self)
         _debug('initialized %s', self)
     def handle(self):
@@ -80,10 +108,15 @@ class SyncReceiver(_socketserver.StreamRequestHandler, prdb.Writer):
                 raise NotImplementedError('unknown input', d)
             request_handled()
     def handle_flushed_data(self, data):
-        self.server.send_update_one(self, 'log', data)
+        self.send_update_one('log', data)
     def finish(self):
         self.server.remove_receiver(self)
         _debug('finished %s', self)
+    def send_update_one(self, *args):
+        s = json.dumps(args)
+        _debug('sending %s', s)
+        b = s.encode('utf-8') + b'\n'
+        self.writer.write(b)
 
 class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
     # .. for the socketserver superclasses ..
@@ -103,18 +136,13 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
         with _prdb.lock:
             self._receivers.append(r)
             self.db.dump_to_writer(r)
-        self.send_update_one(r, 'sync_end')
+        r.send_update_one('sync_end')
     def db_object_changed(self, o, key, by, when, old, new):
         if self.client and by == BY: return
 
         # Wonder if these should be buffered.. nahh..
         for r in self._receivers:
-            self.send_update_one(r, 'log', (when, o.id, {key: new}))
-    def send_update_one(self, r, *args):
-        s = json.dumps(args)
-        _debug('sending %s', s)
-        b = s.encode('utf-8') + b'\n'
-        r.wfile.write(b)
+            r.send_update_one('log', (when, o.id, {key: new}))
 
 
 def start_server(db=None, ip='', port=kh.PORT):
