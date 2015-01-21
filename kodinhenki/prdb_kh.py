@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Wed Jan  7 15:09:07 2015 mstenber
-# Edit time:     28 min
+# Last modified: Wed Jan 21 17:54:38 2015 mstenber
+# Edit time:     40 min
 #
 """
 
@@ -22,6 +22,10 @@ import prdb
 import threading
 import types
 import kodinhenki.updater as _updater
+import logging
+
+_logger = logging.getLogger('kh.prdb')
+_debug = _logger.debug
 
 KH = prdb.App('kh', version=1)
 
@@ -42,7 +46,33 @@ UserActive = KH.declare_class('user_active')
 
 WifiDevice = KH.declare_class('wifi')
 
-lock = threading.RLock()
+import inspect
+
+class LogLock(object):
+    def __init__(self, cl):
+        self.lock = cl()
+    def _acquire(self, stack, who, *a, **kw):
+        if self.lock.acquire(blocking=False, *a, **kw):
+            _debug('%s %s (got)', stack, who)
+            return True
+        _debug('%s %s (pending)', stack, who)
+        return self.lock.acquire(*a, **kw)
+    def acquire(self, *a, **kw):
+        return self._acquire(inspect.stack()[1], *a, **kw)
+    def release(self):
+        _debug('%s release', inspect.stack()[1])
+        self.lock.release()
+    def _is_owned(self):
+        return self.lock._is_owned()
+    def __enter__(self):
+        return self._acquire(inspect.stack()[1], 'enter')
+    def __exit__(self, *args):
+        _debug('%s exit', inspect.stack()[1])
+        self.lock.release()
+        return False
+
+#lock = threading.RLock()
+lock = LogLock(threading.RLock)
 
 # Debug code to make sure lock IS used whenever accessing Object/Database
 import prdb.db as _db
