@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Wed Jan  7 14:49:55 2015 mstenber
-# Edit time:     128 min
+# Last modified: Mon Jan 19 13:21:45 2015 mstenber
+# Edit time:     129 min
 #
 """
 
@@ -117,10 +117,11 @@ _prdb_kh.WemoTracker.set_create_owner_instance_callback(WemoTracker)
 
 
 def get(event_port=None, discovery_port=None, **ipargs):
-    o = _prdb_kh.WemoTracker.new_named().get_owner()
-    assert o
-    if event_port:
-        o.set_event_port(event_port, **ipargs)
-    if discovery_port:
-        o.set_discovery_port(discovery_port, **ipargs)
-    return o
+    with _prdb_kh.lock:
+        o = _prdb_kh.WemoTracker.new_named().get_owner()
+        assert o
+        if event_port:
+            o.set_event_port(event_port, **ipargs)
+        if discovery_port:
+            o.set_discovery_port(discovery_port, **ipargs)
+        return o
