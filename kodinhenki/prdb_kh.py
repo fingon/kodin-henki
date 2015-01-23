@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Wed Jan 21 17:54:38 2015 mstenber
-# Edit time:     40 min
+# Last modified: Fri Jan 23 12:04:01 2015 mstenber
+# Edit time:     45 min
 #
 """
 
@@ -18,13 +18,16 @@ Kodinhenki schema declaration for prdb
 
 """
 
+from . import updater
+from . import util
+
 import prdb
+
 import threading
 import types
-import kodinhenki.updater as _updater
-import logging
 
-_logger = logging.getLogger('kh.prdb')
+import logging
+_logger = logging.getLogger(__name__)
 _debug = _logger.debug
 
 KH = prdb.App('kh', version=1)
@@ -46,33 +49,7 @@ UserActive = KH.declare_class('user_active')
 
 WifiDevice = KH.declare_class('wifi')
 
-import inspect
-
-class LogLock(object):
-    def __init__(self, cl):
-        self.lock = cl()
-    def _acquire(self, stack, who, *a, **kw):
-        if self.lock.acquire(blocking=False, *a, **kw):
-            _debug('%s %s (got)', stack, who)
-            return True
-        _debug('%s %s (pending)', stack, who)
-        return self.lock.acquire(*a, **kw)
-    def acquire(self, *a, **kw):
-        return self._acquire(inspect.stack()[1], *a, **kw)
-    def release(self):
-        _debug('%s release', inspect.stack()[1])
-        self.lock.release()
-    def _is_owned(self):
-        return self.lock._is_owned()
-    def __enter__(self):
-        return self._acquire(inspect.stack()[1], 'enter')
-    def __exit__(self, *args):
-        _debug('%s exit', inspect.stack()[1])
-        self.lock.release()
-        return False
-
-#lock = threading.RLock()
-lock = LogLock(threading.RLock)
+lock = util.create_rlock()
 
 # Debug code to make sure lock IS used whenever accessing Object/Database
 import prdb.db as _db
@@ -104,7 +81,7 @@ def set_lock_check_enabled(x):
     _enable_lock_check = x
     return old
 
-class LockedUpdated(_updater.Updated):
+class LockedUpdated(updater.Updated):
     def update(self, *args, **kwargs):
         with lock:
             return self.locked_update(*args, **kwargs)

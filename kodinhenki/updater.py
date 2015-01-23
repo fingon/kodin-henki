@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Thu Nov  6 18:22:39 2014 mstenber
-# Edit time:     31 min
+# Last modified: Fri Jan 23 17:05:43 2015 mstenber
+# Edit time:     47 min
 #
 """
 
@@ -28,6 +28,8 @@ can remove+readd object.
 
 """
 
+from . import util
+
 import threading
 
 import logging
@@ -35,20 +37,24 @@ logger = logging.getLogger('kh.updater')
 _debug = logger.debug
 _error = logger.error
 
+_queue = {}
+_queue_lock = util.create_rlock()
+
 class Updated:
     def next_update_in_seconds_changed(self):
         with _queue_lock:
             if self in _queue:
                 remove(self)
-                add(self)
-            # If we're not in queue, does not matter
+            else:
+                return
+        # We _were_ in queue. Calling add with lock held
+        # may lead to problems (as it calls next_update_in_seconds which
+        # may use other locks -> potential for lock priority inversion).
+        add(self)
     def next_update_in_seconds(self):
         raise NotImplementedError
     def update(self):
         raise NotImplementedError
-
-_queue = {}
-_queue_lock = threading.RLock()
 
 def add(o):
     assert isinstance(o, Updated)
@@ -70,13 +76,13 @@ def add(o):
                 if _queue.get(o, None) is not t:
                     return
                 remove(o)
-                add(o)
+            add(o)
     t = threading.Timer(nu, _run)
     _debug('adding in %s:%s = %s', nu, _run, t)
     with _queue_lock:
         assert not o in _queue
-        t.start()
         _queue[o] = t
+    t.start()
 
 def is_empty():
     return not len(_queue)
