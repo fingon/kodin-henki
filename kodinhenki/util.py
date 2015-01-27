@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 19:03:29 2014 mstenber
-# Last modified: Fri Jan 23 12:04:08 2015 mstenber
-# Edit time:     9 min
+# Last modified: Fri Jan 23 17:16:29 2015 mstenber
+# Edit time:     19 min
 #
 """
 
@@ -48,9 +48,12 @@ def get_ipv6_address(remote_ip='2600::'):
 import inspect
 
 class LogLock(object):
-    def __init__(self, cl):
+    def __init__(self, cl, assert_without=[]):
         self.lock = cl()
+        self.assert_without = assert_without
     def _acquire(self, stack, who, *a, **kw):
+        for lock in self.assert_without:
+            assert not lock._is_owned()
         if self.lock.acquire(blocking=False, *a, **kw):
             _debug('%s %s (got)', stack, who)
             return True
@@ -73,10 +76,10 @@ class LogLock(object):
         self.lock.release()
         return False
 
-def _create_lock(cl):
-    return LogLock(cl)
+def _create_lock(cl, **kw):
+    return LogLock(cl, **kw)
     #return cl()
 
 
-def create_rlock():
-    return _create_lock(threading.RLock)
+def create_rlock(**kw):
+    return _create_lock(threading.RLock, **kw)

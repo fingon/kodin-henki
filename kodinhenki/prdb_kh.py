@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Fri Jan 23 12:04:01 2015 mstenber
-# Edit time:     45 min
+# Last modified: Fri Jan 23 17:16:03 2015 mstenber
+# Edit time:     46 min
 #
 """
 
@@ -49,7 +49,7 @@ UserActive = KH.declare_class('user_active')
 
 WifiDevice = KH.declare_class('wifi')
 
-lock = util.create_rlock()
+lock = util.create_rlock(assert_without=[updater._queue_lock])
 
 # Debug code to make sure lock IS used whenever accessing Object/Database
 import prdb.db as _db
