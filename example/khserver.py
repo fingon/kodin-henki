@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Fri Oct 31 10:33:34 2014 mstenber
-# Edit time:     13 min
+# Last modified: Wed Jan 28 22:07:17 2015 mstenber
+# Edit time:     15 min
 #
 """
 
@@ -23,8 +23,9 @@ remotely.
 """
 
 import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(message)s')
-logging.getLogger('kh.updater').setLevel(logging.INFO)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(name)s %(message)s')
+logging.getLogger('kodinhenki.updater').setLevel(logging.INFO)
+logging.getLogger('kodinhenki.util').setLevel(logging.INFO)
 
 import kodinhenki.hue as hue
 import kodinhenki.wemo.device_tracker as dt

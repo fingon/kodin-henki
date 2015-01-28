@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 13:35:41 2014 mstenber
-# Last modified: Mon Jan 19 13:21:45 2015 mstenber
+# Last modified: Wed Jan 28 22:04:40 2015 mstenber
 # Edit time:     129 min
 #
 """
@@ -35,7 +35,7 @@ import kodinhenki.compat as compat
 urljoin = compat.get_urllib_parse().urljoin
 
 import logging
-_logger = logging.getLogger('kh.wemo.device_tracker')
+_logger = logging.getLogger(__name__)
 _debug = _logger.debug
 _error = _logger.error
 

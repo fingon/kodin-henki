@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Fri Jan 23 17:05:43 2015 mstenber
-# Edit time:     47 min
+# Last modified: Wed Jan 28 22:04:16 2015 mstenber
+# Edit time:     48 min
 #
 """
 
@@ -33,7 +33,7 @@ from . import util
 import threading
 
 import logging
-logger = logging.getLogger('kh.updater')
+logger = logging.getLogger(__name__)
 _debug = logger.debug
 _error = logger.error
 

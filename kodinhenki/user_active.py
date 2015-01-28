@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:25:26 2014 mstenber
-# Last modified: Wed Jan  7 15:02:54 2015 mstenber
+# Last modified: Wed Jan 28 22:04:50 2015 mstenber
 # Edit time:     27 min
 #
 """
@@ -30,7 +30,7 @@ import os
 
 
 import logging
-logger = logging.getLogger('kh.user_active')
+logger = logging.getLogger(__name__)
 _debug = logger.debug
 _error = logger.error
 

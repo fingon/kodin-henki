@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Fri Oct 31 09:50:42 2014 mstenber
-# Last modified: Mon Jan 19 13:31:14 2015 mstenber
+# Last modified: Wed Jan 28 22:03:57 2015 mstenber
 # Edit time:     32 min
 #
 """
@@ -35,7 +35,7 @@ import os
 import json
 
 import logging
-logger = logging.getLogger('kh.owrt_wifi')
+logger = logging.getLogger(__name__)
 _debug = logger.debug
 _error = logger.error
 

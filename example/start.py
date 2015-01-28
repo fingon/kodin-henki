@@ -7,7 +7,7 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Wed Jan 14 16:06:33 2015 mstenber
+# Last modified: Wed Jan 28 10:18:36 2015 mstenber
 # Edit time:     270 min
 #
 """
@@ -45,7 +45,7 @@ import kodinhenki.prdb_kh as _prdb_kh
 
 # activity sources
 IP='.kh.user_active.poro'
-WM='.kh.wemo_motion.WeMo Motion'
+WM='.kh.wemo_motion.motion'
 PHONES=['.kh.wifi.iphone6', '.kh.wifi.nexus5']
 
 # lights to be controlled
@@ -53,7 +53,7 @@ LB='.kh.hue.Bed'
 LC='.kh.hue.Entry'
 LK='.kh.hue.Kitchen'
 LR='.kh.hue.Living'
-WT='.kh.wemo_switch.WeMo Toilet'
+WT='.kh.wemo_switch.switch2'
 
 # Which light do we care about when it's daylight?
 DAYLIGHT_LIGHTS=[WT]

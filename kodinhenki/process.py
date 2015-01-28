@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:10:38 2014 mstenber
-# Last modified: Wed Jan  7 14:47:50 2015 mstenber
+# Last modified: Wed Jan 28 22:04:10 2015 mstenber
 # Edit time:     17 min
 #
 """
@@ -27,7 +27,7 @@ import kodinhenki.prdb_kh as _prdb_kh
 import os
 
 import logging
-logger = logging.getLogger('kh.user_active')
+logger = logging.getLogger(__name__)
 _debug = logger.debug
 _error = logger.error
 
