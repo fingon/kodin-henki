@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Thu Jan 22 00:15:33 2015 mstenber
-# Edit time:     123 min
+# Last modified: Fri Aug 21 10:39:58 2015 mstenber
+# Edit time:     127 min
 #
 """
 
@@ -135,6 +135,7 @@ class SyncServer(_socketserver.ThreadingMixIn, _socketserver.TCPServer):
     def add_receiver(self, r):
         with _prdb.lock:
             self._receivers.append(r)
+            self.db.commit()
             self.db.dump_to_writer(r)
         r.send_update_one('sync_end')
     def db_object_changed(self, o, key, by, when, old, new):
