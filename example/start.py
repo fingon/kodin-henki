@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Wed Jan 28 10:18:36 2015 mstenber
-# Edit time:     270 min
+# Last modified: Thu Jun 11 19:40:37 2015 mstenber
+# Edit time:     271 min
 #
 """
 
@@ -53,10 +53,11 @@ LB='.kh.hue.Bed'
 LC='.kh.hue.Entry'
 LK='.kh.hue.Kitchen'
 LR='.kh.hue.Living'
-WT='.kh.wemo_switch.switch2'
+#WT='.kh.wemo_switch.switch2'
+LT='.kh.hue.Toilet'
 
 # Which light do we care about when it's daylight?
-DAYLIGHT_LIGHTS=[WT]
+DAYLIGHT_LIGHTS=[LT]
 SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
 #SENSOR_BUILT_IN_DELAY={}
 
@@ -86,7 +87,7 @@ def _changed_within(e, x):
     return time.time() - x < c
 
 class HomeState:
-    lights = [LC, LK, LR, LB, WT] # the lights we control
+    lights = [LC, LK, LR, LB, LT] # the lights we control
     lights_on = None # lights that are always on
     sensor = None # sensor to monitor (see within next)
     within = None # how recently it must have been active to apply
@@ -153,14 +154,14 @@ class HomeState:
 
 class ProjectorState(HomeState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
-    lights_conditional = {LC: (WM, 30), WT: (WM, 900)}
+    lights_conditional = {LC: (WM, 30), LT: (WM, 900)}
 
 class MobileState(HomeState):
     " Most recently seen in corridor - could be even outside. "
     within = 3600 * 3 # within 3 hours
     lights_on = [LR, LK]
     sensor = WM
-    lights_conditional = {LC: (WM, 300), WT: (WM, 3600)}
+    lights_conditional = {LC: (WM, 300), LT: (WM, 3600)}
     def enter(self):
         #_monitor_off() # significant power hog, waiting 3 hours not sensible
         # .. it's just 10 minutes. who cares. more annoying to have it resync
@@ -170,7 +171,7 @@ class MobileState(HomeState):
 class AwayState(HomeState):
     # Just operate the motion sensor triggered ones, if there is motion
     # (if it gets triggered, our state should change soon-ish anyway)
-    lights_conditional = {LC: (WM, 300), WT: (WM, 900)}
+    lights_conditional = {LC: (WM, 300), LT: (WM, 900)}
 
 class ComputerState(HomeState):
     " Unidle at one of the computers. "
@@ -189,7 +190,7 @@ class NightState(ProjectorState):
     within = 3600 * 8
     sensor = LB
     # _only_ control toilet lightning, based on motion rules
-    lights = [WT]
+    lights = [LT]
 
 def _most_recent(e, *el):
     c = _last_changed(e)
