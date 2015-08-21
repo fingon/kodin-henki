@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 23 11:46:46 2014 mstenber
-# Last modified: Wed Jan  7 14:58:21 2015 mstenber
-# Edit time:     65 min
+# Last modified: Fri Aug 21 10:36:46 2015 mstenber
+# Edit time:     66 min
 #
 """
 
@@ -32,7 +32,10 @@ import logging
 import kodinhenki.compat as compat
 urljoin = compat.get_urllib_parse().urljoin
 
-def test_wemo(caplog):
+# Doing this might be nice, but in practice, nahh. WeMo stuff =
+# crap. so test is disabled, use this test if you have a device that
+# actually responds to discovery requests. (I no longer do)
+def _test_wemo(caplog):
     _old = _prdb.set_lock_check_enabled(True)
     if caplog: caplog.setLevel(logging.DEBUG)
     with _prdb.lock:

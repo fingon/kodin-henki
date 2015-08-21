@@ -35,7 +35,8 @@ Requirements
 
 * phue (Philips Hue support - pure Python, single .py)
 * tox (for unit testing; it will pull py.test and run things inside virtualenv)
-
+* prdb (for database of key-value objects)
+* pysyma (for PRDB state synchronization across home)
 
 Design
 ======
