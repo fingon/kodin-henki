@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sat Aug 22 11:41:55 2015 mstenber
-# Edit time:     158 min
+# Last modified: Sun Aug 23 12:11:29 2015 mstenber
+# Edit time:     178 min
 #
 """
 
@@ -43,6 +43,7 @@ import socket
 import json
 import functools
 import time
+from collections import defaultdict
 
 import logging
 _debug = logging.debug
@@ -65,20 +66,24 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
             in_sync()
     def db_object_changed(self, o, key, by, when, old, new):
         if by == BY: return
-        skey = '%s/%s' % (o, key)
+        skey = '%s/%s' % (o.id, key)
         self.p.update_dict({skey : new and new or None}, ts=when)
     def dict_update_event(self, n, od, nd):
         if n is self.p.own_node: return
+        ts2d = defaultdict(dict)
         for sk, (ts, v) in nd.items():
-            if not k.startswith('.kh.'): continue
+            if not sk.startswith('.'): continue
             oid, k = sk.split('/')
-            line = (ts, oid, {k: v})
-            db.process_decoded_line(line, by=BY)
-        for sk in od.keys().difference(nd.keys()):
-            if not k.startswith('.kh.'): continue
+            ts2d[oid,ts][k] = v
+        for sk in set(od.keys()).difference(set(nd.keys())):
+            if not sk.startswith('.'): continue
             oid, k = sk.split('/')
-            line = (ts, oid, {k: None})
-            db.process_decoded_line(line, by=BY)
+            ts2d[oid,ts][k] = None
+        for (oid, ts), d in sorted(ts2d.items(), key=lambda k:k[0][1]):
+            line = (ts, oid, d)
+            _debug('%s dict_update_event line:%s', self, line)
+            with _prdb.lock:
+                self.db.process_decoded_line(line, by=BY)
         request_handled()
 
 def _shared_start(db, si, p, **kw):
@@ -88,9 +93,9 @@ def _shared_start(db, si, p, **kw):
     t.start()
     return dict(si=si, p=p, t=t, sync=sync, **kw)
 
-def start(db):
+def start(db, **kw):
     si = pysyma.si.HNCPSystemInterface()
-    p = si.create_dncp(pysyma.shsp.SHSP)
+    p = si.create_dncp(pysyma.shsp.SHSP, **kw)
     return _shared_start(db, si, p)
 
 def stop(s):

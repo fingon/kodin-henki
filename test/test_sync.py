@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 14:08:10 2014 mstenber
-# Last modified: Wed Jan  7 14:38:30 2015 mstenber
-# Edit time:     24 min
+# Last modified: Sun Aug 23 11:45:25 2015 mstenber
+# Edit time:     29 min
 #
 """
 
@@ -72,7 +72,7 @@ def test_sync():
                     return
             assert e.wait(0.5)
 
-    _locked_wait(lambda :cl2.get_named('foo2'))
+    _locked_wait(lambda :cl2.get_named('foo'))
 
     with _prdb.lock:
         o2 = cl2.new_named('bar', dummyi=1, dummyf=3.14, dummys='foo')
