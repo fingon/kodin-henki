@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Sun Aug 23 12:21:02 2015 mstenber
-# Edit time:     55 min
+# Last modified: Sun Aug 23 12:29:20 2015 mstenber
+# Edit time:     57 min
 #
 """
 
@@ -67,7 +67,7 @@ def add(o, update=False):
             # ourselves.
             if o not in _queue:
                 return
-            del _queue[o]
+            remove(o)
         if nu is None:
             return
         if nu <= 0:
