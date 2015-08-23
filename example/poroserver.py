@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Wed Jan 14 16:06:41 2015 mstenber
-# Edit time:     17 min
+# Last modified: Sun Aug 23 12:24:39 2015 mstenber
+# Edit time:     19 min
 #
 """
 
@@ -64,10 +64,8 @@ def start():
 
 if __name__ == '__main__':
     _prdb_kh.set_lock_check_enabled(True)
-    ip = os.environ.get('KHIP', '192.168.42.1')
     with _prdb_kh.lock:
-        db = kh.get_database()
-        sync.start_client(db, (ip, kh.PORT))
+        sync.start()
         start()
 
 # XXX - do clever things with set_volume, itunes_pause, etc..

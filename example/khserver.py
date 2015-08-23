@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Wed Jan 28 22:07:17 2015 mstenber
+# Last modified: Sun Aug 23 12:24:50 2015 mstenber
 # Edit time:     15 min
 #
 """
@@ -43,7 +43,7 @@ if socket.gethostname() == 'cer':
 
 def start():
     # Start database (implicitly on the hardcoded port + any ip)
-    sync.start_server()
+    sync.start()
 
     # Start the devices
     updater.add(hue.get_updater(ip='192.168.44.10'))

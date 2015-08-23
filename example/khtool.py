@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Mon Oct 27 21:55:08 2014 mstenber
+# Last modified: Sun Aug 23 12:25:18 2015 mstenber
 # Edit time:     17 min
 #
 """
@@ -24,21 +24,15 @@ import kodinhenki as kh
 import kodinhenki.sync as sync
 import kodinhenki.prdb_kh as _prdb_kh
 import time
-import os
 
 p = argparse.ArgumentParser(description='view/set kh state')
 p.add_argument('-v', '--verbose', action='store_true',
                help='verbose output')
-ip = os.environ.get('KHIP', '127.0.0.1')
-p.add_argument('--ip', default=ip, type=str,
-               help='address of the kh server')
-p.add_argument('--port', default=31342, type=int,
-               help='port of the kh server')
 p.add_argument('keys', metavar='N', type=str, nargs='*',
                help='key=value, or just key to print (none = show all)')
 args = p.parse_args()
 db = kh.get_database()
-sync.start_client(db, (args.ip, args.port))
+sync.start()
 sync.in_sync.wait()
 def _dump_one(ok, kk):
     o = db.get_by_oid(ok)
