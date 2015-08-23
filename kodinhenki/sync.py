@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sun Aug 23 12:11:29 2015 mstenber
-# Edit time:     178 min
+# Last modified: Sun Aug 23 12:23:52 2015 mstenber
+# Edit time:     179 min
 #
 """
 
@@ -93,7 +93,8 @@ def _shared_start(db, si, p, **kw):
     t.start()
     return dict(si=si, p=p, t=t, sync=sync, **kw)
 
-def start(db, **kw):
+def start(db=None, **kw):
+    db = db or kh.get_database()
     si = pysyma.si.HNCPSystemInterface()
     p = si.create_dncp(pysyma.shsp.SHSP, **kw)
     return _shared_start(db, si, p)
