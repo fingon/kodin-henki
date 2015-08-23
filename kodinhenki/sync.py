@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sun Aug 23 12:43:40 2015 mstenber
-# Edit time:     183 min
+# Last modified: Sun Aug 23 13:17:56 2015 mstenber
+# Edit time:     190 min
 #
 """
 
@@ -64,16 +64,25 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
         p.add_subscriber(self)
         self.updates = []
         self.update_lock = create_rlock()
+        with _prdb.lock:
+            self.db.commit()
+            self.db.dump_to_writer(self)
+    # Writer interface of prdb.Writer
+    def flush_one(self):
+        pass
+    def write(self, oid, key, new, when):
+        if oid[0] == '_': return
+        skey = '%s/%s' % (oid, key)
+        with self.update_lock:
+            if not self.updates:
+                self.p.sys.schedule(0, self.push_updates)
+            self.updates.append((({skey : new and new or None},), {'ts': when}))
     def network_consistent_event(self, c):
         if c:
             in_sync()
     def db_object_changed(self, o, key, by, when, old, new):
         if by == BY: return
-        skey = '%s/%s' % (o.id, key)
-        with self.update_lock:
-            if not self.updates:
-                self.p.sys.schedule(0, self.push_updates)
-            self.updates.append((({skey : new and new or None},), {'ts': when}))
+        self.write(o.id, key, new, when)
     def push_updates(self):
         with self.update_lock:
             l = self.updates
