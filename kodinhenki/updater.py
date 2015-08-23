@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Wed Jan 28 22:04:16 2015 mstenber
-# Edit time:     48 min
+# Last modified: Sun Aug 23 12:21:02 2015 mstenber
+# Edit time:     55 min
 #
 """
 
@@ -42,27 +42,14 @@ _queue_lock = util.create_rlock()
 
 class Updated:
     def next_update_in_seconds_changed(self):
-        with _queue_lock:
-            if self in _queue:
-                remove(self)
-            else:
-                return
-        # We _were_ in queue. Calling add with lock held
-        # may lead to problems (as it calls next_update_in_seconds which
-        # may use other locks -> potential for lock priority inversion).
-        add(self)
+        add(self, update=True)
     def next_update_in_seconds(self):
         raise NotImplementedError
     def update(self):
         raise NotImplementedError
 
-def add(o):
+def add(o, update=False):
     assert isinstance(o, Updated)
-    nu = o.next_update_in_seconds()
-    if nu is None:
-        return
-    if nu <= 0:
-        nu = 1
     def _run():
         with _queue_lock:
             # If the object somehow disappeared/changed in queue, do nothing
@@ -71,15 +58,22 @@ def add(o):
         try:
             o.update()
         finally:
-            with _queue_lock:
-                # If object removed itself, do not re-add
-                if _queue.get(o, None) is not t:
-                    return
-                remove(o)
             add(o)
-    t = threading.Timer(nu, _run)
-    _debug('adding in %s:%s = %s', nu, _run, t)
+    nu = o.next_update_in_seconds()
     with _queue_lock:
+        if update:
+            # If we want to re-add ourselves (update), but we are no
+            # longer in queue, we simply punt and do not re-add
+            # ourselves.
+            if o not in _queue:
+                return
+            del _queue[o]
+        if nu is None:
+            return
+        if nu <= 0:
+            nu = 1
+        t = threading.Timer(nu, _run)
+        _debug('adding in %s:%s = %s', nu, _run, t)
         assert not o in _queue
         _queue[o] = t
     t.start()
