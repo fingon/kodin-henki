@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Sun Aug 23 12:25:18 2015 mstenber
-# Edit time:     17 min
+# Last modified: Sun Aug 23 12:34:21 2015 mstenber
+# Edit time:     18 min
 #
 """
 
@@ -26,11 +26,16 @@ import kodinhenki.prdb_kh as _prdb_kh
 import time
 
 p = argparse.ArgumentParser(description='view/set kh state')
+p.add_argument('-d', '--debug', action='store_true',
+               help='enable debugging')
 p.add_argument('-v', '--verbose', action='store_true',
                help='verbose output')
 p.add_argument('keys', metavar='N', type=str, nargs='*',
                help='key=value, or just key to print (none = show all)')
 args = p.parse_args()
+if args.debug:
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
 db = kh.get_database()
 sync.start()
 sync.in_sync.wait()
