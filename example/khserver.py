@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Sun Aug 23 12:24:50 2015 mstenber
-# Edit time:     15 min
+# Last modified: Sun Aug 23 13:32:55 2015 mstenber
+# Edit time:     17 min
 #
 """
 
@@ -26,6 +26,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(name)s %(message)s')
 logging.getLogger('kodinhenki.updater').setLevel(logging.INFO)
 logging.getLogger('kodinhenki.util').setLevel(logging.INFO)
+logging.getLogger('pysyma.dncp').setLevel(logging.INFO)
+logging.getLogger('pysyma.si').setLevel(logging.INFO)
+logging.getLogger('pysyma.shsp').setLevel(logging.INFO)
 
 import kodinhenki.hue as hue
 import kodinhenki.wemo.device_tracker as dt
@@ -33,13 +36,22 @@ import kodinhenki.sync as sync
 import kodinhenki.updater as updater
 import kodinhenki.owrt_wifi as _owrt_wifi
 
-ip=None
 import socket
 
-if socket.gethostname() == 'cer':
-    ip='192.168.44.1'
-    # The remote_ip based lookup does not really seem to work with v4.
-    # Oh well. So hardcode here for the cer case with N addresses.
+is_cer = socket.gethostname() == 'cer'
+
+def start_wemo():
+    ip=None
+    if is_cer:
+        ip='192.168.44.1'
+        # The remote_ip based lookup does not really seem to work with v4.
+        # Oh well. So hardcode here for the cer case with N addresses.
+
+    updater.add(dt.get(ip=ip,
+                       remote_ip='192.168.44.254',
+                       discovery_port=54321,
+                       event_port=8989))
+
 
 def start():
     # Start database (implicitly on the hardcoded port + any ip)
@@ -47,11 +59,11 @@ def start():
 
     # Start the devices
     updater.add(hue.get_updater(ip='192.168.44.10'))
-    updater.add(dt.get(ip=ip,
-                       remote_ip='192.168.44.254',
-                       discovery_port=54321,
-                       event_port=8989))
-    if ip:
+
+    # WeMo is dead, baby!
+    #start_wemo()
+
+    if is_cer:
         # We're CER => can check locally wifi state
         _owrt_wifi.start()
 
