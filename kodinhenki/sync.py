@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sun Aug 23 12:23:52 2015 mstenber
-# Edit time:     179 min
+# Last modified: Sun Aug 23 12:43:40 2015 mstenber
+# Edit time:     183 min
 #
 """
 
@@ -33,7 +33,7 @@ where:
 
 import prdb
 import kodinhenki as kh
-from kodinhenki.util import Signal
+from kodinhenki.util import Signal, create_rlock
 import kodinhenki.prdb_kh as _prdb
 import pysyma.shsp
 import pysyma.si
@@ -54,6 +54,7 @@ in_sync = Signal()
 
 BY='sync'
 
+
 class Syncer(pysyma.shsp.SHSPSubscriber):
     def __init__(self, db, p):
         self.db = db
@@ -61,13 +62,24 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
         # local -> remote
         db.object_changed.connect(self.db_object_changed)
         p.add_subscriber(self)
+        self.updates = []
+        self.update_lock = create_rlock()
     def network_consistent_event(self, c):
         if c:
             in_sync()
     def db_object_changed(self, o, key, by, when, old, new):
         if by == BY: return
         skey = '%s/%s' % (o.id, key)
-        self.p.update_dict({skey : new and new or None}, ts=when)
+        with self.update_lock:
+            if not self.updates:
+                self.p.sys.schedule(0, self.push_updates)
+            self.updates.append((({skey : new and new or None},), {'ts': when}))
+    def push_updates(self):
+        with self.update_lock:
+            l = self.updates
+            self.updates = []
+        for a, kwa in l:
+            self.p.update_dict(*a, **kwa)
     def dict_update_event(self, n, od, nd):
         if n is self.p.own_node: return
         ts2d = defaultdict(dict)
