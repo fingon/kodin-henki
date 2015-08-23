@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Sun Aug 23 12:29:20 2015 mstenber
-# Edit time:     57 min
+# Last modified: Sun Aug 23 12:30:32 2015 mstenber
+# Edit time:     58 min
 #
 """
 
@@ -58,7 +58,7 @@ def add(o, update=False):
         try:
             o.update()
         finally:
-            add(o)
+            add(o, update=True)
     nu = o.next_update_in_seconds()
     with _queue_lock:
         if update:
