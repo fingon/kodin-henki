@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Mon Aug 24 09:57:46 2015 mstenber
-# Edit time:     19 min
+# Last modified: Mon Aug 24 11:03:59 2015 mstenber
+# Edit time:     22 min
 #
 """
 
@@ -30,6 +30,7 @@ p.add_argument('-d', '--debug', action='store_true',
                help='enable debugging')
 p.add_argument('-v', '--verbose', action='store_true',
                help='verbose output')
+p.add_argument('--ifname', type=str, help='interface to use')
 p.add_argument('keys', metavar='N', type=str, nargs='*',
                help='key=value, or just key to print (none = show all)')
 args = p.parse_args()
@@ -37,7 +38,8 @@ if args.debug:
     import logging
     logging.basicConfig(level=logging.DEBUG)
 db = kh.get_database()
-s = sync.start()
+if_list = args.ifname and [args.ifname] or None
+s = sync.start(if_list=if_list)
 sync.in_sync.wait()
 def _dump_one(ok, kk):
     o = db.get_by_oid(ok)
