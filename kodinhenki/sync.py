@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Mon Aug 24 09:57:01 2015 mstenber
-# Edit time:     195 min
+# Last modified: Mon Aug 24 14:11:44 2015 mstenber
+# Edit time:     201 min
 #
 """
 
@@ -64,6 +64,7 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
         p.add_subscriber(self)
         self.updates = []
         self.update_lock = create_rlock()
+        self.oidk2ts = {}
         with _prdb.lock:
             self.db.commit()
             self.db.dump_to_writer(self)
@@ -96,8 +97,10 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
             if not sk.startswith('.'): continue
             oid, k = sk.split('/')
             ts2d[oid,ts][k] = v
+            self.oidk2ts[sk] = ts
         for sk in set(od.keys()).difference(set(nd.keys())):
             if not sk.startswith('.'): continue
+            ts = self.oidk2ts.pop(sk)
             oid, k = sk.split('/')
             ts2d[oid,ts][k] = None
         for (oid, ts), d in sorted(ts2d.items(), key=lambda k:k[0][1]):
