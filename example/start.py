@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Aug 24 11:23:18 2015 mstenber
-# Edit time:     281 min
+# Last modified: Mon Aug 24 13:21:00 2015 mstenber
+# Edit time:     300 min
 #
 """
 
@@ -46,6 +46,7 @@ import kodinhenki.prdb_kh as _prdb_kh
 # activity sources
 IP='.kh.user_active.poro'
 #MS='.kh.wemo_motion.motion'
+LS='.kh.light_sensor.corridor'
 MS='.kh.motion_sensor.corridor'
 PHONES=['.kh.wifi.iphone6', '.kh.wifi.nexus5']
 
@@ -58,9 +59,11 @@ LR='.kh.hue.Living'
 LT='.kh.hue.Toilet'
 
 # Which light do we care about when it's daylight?
-DAYLIGHT_LIGHTS=[LT]
+DAYLIGHT_LIGHTS=[LT, LC]
 SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
 #SENSOR_BUILT_IN_DELAY={}
+
+AWAY_GRACE_PERIOD=300
 
 _seen_on = {}
 
@@ -137,6 +140,9 @@ class HomeState:
     def update_lights(self):
         # We're valid in general
         daylight = suncalc.within_zenith()
+        o = db.get_by_oid(LS)
+        if o and o.value <= 30:
+            daylight = False
         h = {}
         for light in self.lights:
             state = self.get_light_state(daylight, light)
@@ -220,8 +226,11 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         if st: return ProjectorState
 
         maybe_away = False
-        present_phones = [x for x in PHONES if _last_changed(x) is True]
-
+        lc_phones = [_last_changed(x) for x in PHONES]
+        present_phones = [x for x in lc_phones if x is True]
+        known_phones = [x for x in lc_phones if x is not None]
+        if known_phones and not present_phones:
+            maybe_away = True
         # XXX - this is temporary check because it seems that
         # user_active _and_ wemo events are sporadically wrong, and I
         # do not want light show at night :-p Rather leave control
@@ -232,11 +241,22 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         states = [NightState, ComputerState, MobileState]
         sensors = [state.sensor for state in states]
         for state in states:
-            if _most_recent(state.sensor, *sensors):
-                c = _last_changed(state.sensor)
-                if not(not present_phones and c and c is not True and (time.time() - c > 600)):
-                    return state
-        if not present_phones:
+            # We care about state-specific sensor being most recently
+            # triggered one
+            if not _most_recent(state.sensor, *sensors):
+                continue
+            c = _last_changed(state.sensor)
+            if c is True:
+                return state
+            if not c:
+                continue
+            dt = time.time() - c
+            if dt > state.within:
+                continue
+            if maybe_away and dt > AWAY_GRACE_PERIOD:
+                return AwayState
+            return state
+        if maybe_away:
             return AwayState
     def locked_next_update_in_seconds(self):
         if self.pending:
