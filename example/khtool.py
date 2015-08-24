@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 13:01:00 2014 mstenber
-# Last modified: Sun Aug 23 12:34:21 2015 mstenber
-# Edit time:     18 min
+# Last modified: Mon Aug 24 09:57:46 2015 mstenber
+# Edit time:     19 min
 #
 """
 
@@ -37,7 +37,7 @@ if args.debug:
     import logging
     logging.basicConfig(level=logging.DEBUG)
 db = kh.get_database()
-sync.start()
+s = sync.start()
 sync.in_sync.wait()
 def _dump_one(ok, kk):
     o = db.get_by_oid(ok)
@@ -83,3 +83,4 @@ else:
     if did_set[0]:
         # Wait for the change to propagate..
         sync.request_handled.wait()
+sync.stop(s)

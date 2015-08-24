@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Sun Aug 23 13:25:26 2015 mstenber
-# Edit time:     193 min
+# Last modified: Mon Aug 24 09:57:01 2015 mstenber
+# Edit time:     195 min
 #
 """
 
@@ -122,7 +122,7 @@ def start(db=None, **kw):
 
 def stop(s):
     s['si'].stop()
-    # TBD: Should we close sockets too?
+    s['t'].join()
 
 # TBD: Should these backwards compatible APIs be killed?
 def start_server(db=None, ip='::1', port=kh.PORT):
