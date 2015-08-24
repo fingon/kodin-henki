@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Aug 24 13:21:00 2015 mstenber
-# Edit time:     300 min
+# Last modified: Mon Aug 24 13:59:15 2015 mstenber
+# Edit time:     306 min
 #
 """
 
@@ -64,6 +64,8 @@ SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
 #SENSOR_BUILT_IN_DELAY={}
 
 AWAY_GRACE_PERIOD=300
+
+DARK_CHECK_INTERVAL=(3600*3)
 
 _seen_on = {}
 
@@ -137,11 +139,14 @@ class HomeState:
     # What to do when leaving this state
     def leave(self):
         pass
+    dark_time = 0
     def update_lights(self):
         # We're valid in general
         daylight = suncalc.within_zenith()
         o = db.get_by_oid(LS)
         if o and o.value <= 30:
+            self.dark_time = time.time()
+        if daylight and (time.time() - self.dark_time) < DARK_CHECK_INTERVAL:
             daylight = False
         h = {}
         for light in self.lights:
