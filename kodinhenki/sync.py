@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Mon Aug 24 14:37:17 2015 mstenber
-# Edit time:     213 min
+# Last modified: Mon Aug 24 18:05:00 2015 mstenber
+# Edit time:     215 min
 #
 """
 
@@ -33,7 +33,7 @@ where:
 
 import prdb
 import kodinhenki as kh
-from kodinhenki.util import Signal, create_rlock
+from kodinhenki.util import Signal
 import kodinhenki.prdb_kh as _prdb
 import pysyma.shsp
 import pysyma.si
@@ -63,7 +63,6 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
         db.object_changed.connect(self.db_object_changed)
         p.add_subscriber(self)
         self.updates = []
-        self.update_lock = create_rlock()
         self.oidk2ts = {}
         self.hostname = '%s/%d' % (socket.gethostname(), p.sys.get_port())
         if not self.p.read_only:
@@ -77,10 +76,9 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
     def write(self, oid, key, new, when):
         if oid[0] == '_': return
         skey = '%s/%s' % (oid, key)
-        with self.update_lock:
-            if not self.updates:
-                self.p.sys.schedule(0, self.push_updates)
-            self.updates.append((({skey : new},), {'ts': when}))
+        if not self.updates:
+            self.p.sys.schedule(0, self.push_updates)
+        self.updates.append((({skey : new},), {'ts': when}))
     def network_consistent_event(self, c):
         if c:
             in_sync()
@@ -88,9 +86,7 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
         if by == BY: return
         self.write(o.id, key, new, when)
     def push_updates(self):
-        with self.update_lock:
-            l = self.updates
-            self.updates = []
+        l, self.updates = self.updates, []
         for a, kwa in l:
             self.p.update_dict(*a, **kwa)
     def dict_update_event(self, n, od, nd):
