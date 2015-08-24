@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Fri Jan 23 17:16:03 2015 mstenber
-# Edit time:     46 min
+# Last modified: Mon Aug 24 10:49:03 2015 mstenber
+# Edit time:     48 min
 #
 """
 
@@ -31,6 +31,9 @@ _logger = logging.getLogger(__name__)
 _debug = _logger.debug
 
 KH = prdb.App('kh', version=1)
+
+LightSensor = KH.declare_class('light_sensor')
+MotionSensor = KH.declare_class('motion_sensor')
 
 HueBulb = KH.declare_class('hue')
 
