@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Mon Aug 24 14:11:44 2015 mstenber
-# Edit time:     201 min
+# Last modified: Mon Aug 24 14:37:17 2015 mstenber
+# Edit time:     213 min
 #
 """
 
@@ -65,6 +65,9 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
         self.updates = []
         self.update_lock = create_rlock()
         self.oidk2ts = {}
+        self.hostname = '%s/%d' % (socket.gethostname(), p.sys.get_port())
+        if not self.p.read_only:
+            self.p.update_dict(dict(hostname=self.hostname))
         with _prdb.lock:
             self.db.commit()
             self.db.dump_to_writer(self)
@@ -92,6 +95,7 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
             self.p.update_dict(*a, **kwa)
     def dict_update_event(self, n, od, nd):
         if n is self.p.own_node: return
+        if nd.get('hostname', [None, ''])[1] == self.hostname: return
         ts2d = defaultdict(dict)
         for sk, (ts, v) in nd.items():
             if not sk.startswith('.'): continue
@@ -108,6 +112,12 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
             _debug('%s dict_update_event line:%s', self, line)
             with _prdb.lock:
                 self.db.process_decoded_line(line, by=BY)
+                for k, v in d.items():
+                    if v is None:
+                        o = self.db.get_by_oid(oid)
+                        v = o.get(k, None)
+                        if v is not None:
+                            self.write(oid, k, v, o.get_changed(k))
         request_handled()
 
 def _shared_start(db, si, p, **kw):
