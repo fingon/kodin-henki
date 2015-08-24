@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Thu Jun 11 19:40:37 2015 mstenber
-# Edit time:     271 min
+# Last modified: Mon Aug 24 11:23:18 2015 mstenber
+# Edit time:     281 min
 #
 """
 
@@ -45,7 +45,8 @@ import kodinhenki.prdb_kh as _prdb_kh
 
 # activity sources
 IP='.kh.user_active.poro'
-WM='.kh.wemo_motion.motion'
+#MS='.kh.wemo_motion.motion'
+MS='.kh.motion_sensor.corridor'
 PHONES=['.kh.wifi.iphone6', '.kh.wifi.nexus5']
 
 # lights to be controlled
@@ -154,14 +155,14 @@ class HomeState:
 
 class ProjectorState(HomeState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
-    lights_conditional = {LC: (WM, 30), LT: (WM, 900)}
+    lights_conditional = {LC: (MS, 30), LT: (MS, 900)}
 
 class MobileState(HomeState):
     " Most recently seen in corridor - could be even outside. "
     within = 3600 * 3 # within 3 hours
     lights_on = [LR, LK]
-    sensor = WM
-    lights_conditional = {LC: (WM, 300), LT: (WM, 3600)}
+    sensor = MS
+    lights_conditional = {LC: (MS, 300), LT: (MS, 3600)}
     def enter(self):
         #_monitor_off() # significant power hog, waiting 3 hours not sensible
         # .. it's just 10 minutes. who cares. more annoying to have it resync
@@ -171,7 +172,7 @@ class MobileState(HomeState):
 class AwayState(HomeState):
     # Just operate the motion sensor triggered ones, if there is motion
     # (if it gets triggered, our state should change soon-ish anyway)
-    lights_conditional = {LC: (WM, 300), LT: (WM, 900)}
+    lights_conditional = {LC: (MS, 300), LT: (MS, 900)}
 
 class ComputerState(HomeState):
     " Unidle at one of the computers. "
