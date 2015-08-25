@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Tue Aug 25 14:40:23 2015 mstenber
-# Edit time:     152 min
+# Last modified: Tue Aug 25 15:03:28 2015 mstenber
+# Edit time:     154 min
 #
 """
 
@@ -98,9 +98,10 @@ class HueUpdater(prdb.Owner, _updater.Updated):
 
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 
-def get_updater(ip, **kwargs):
+def get_updater(ip=None, **kwargs):
     o = _prdb_kh.HueUpdater.new_named(**kwargs).get_owner()
-    o.ip = ip
+    if ip:
+        o.ip = ip
     return o
 
 # backwards compatible API
