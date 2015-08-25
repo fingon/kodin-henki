@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Tue Aug 25 10:07:50 2015 mstenber
-# Edit time:     314 min
+# Last modified: Wed Aug 26 00:20:30 2015 mstenber
+# Edit time:     316 min
 #
 """
 
@@ -263,8 +263,7 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
             return AwayState
     def locked_next_update_in_seconds(self):
         if self.pending:
-            #_debug('pending, queuing in 1')
-            return 1 # update once a second if stuff happens often
+            return 0.1 # pending state change -> 0.1 second delay
         return self.state.next_update_in_seconds()
     def some_object_changed(self):
         self.pending = True
