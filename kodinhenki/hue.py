@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Tue Aug 25 15:03:28 2015 mstenber
-# Edit time:     154 min
+# Last modified: Tue Aug 25 15:04:53 2015 mstenber
+# Edit time:     155 min
 #
 """
 
@@ -67,8 +67,8 @@ class HueUpdater(prdb.Owner, _updater.Updated):
         if not (key == 'on' and by != BY_US):
             return
         _debug('setting light state %s=%s', b.light_name, new)
-        b = self.get_bridge(force=self.dynamically_update_lights)
-        d = b.get_light_objects(mode='name')
+        bridge = self.get_bridge(force=self.dynamically_update_lights)
+        d = bridge.get_light_objects(mode='name')
         lo = d.get(b.light_name, None)
         if not lo:
             raise KeyError(b.light_name)
