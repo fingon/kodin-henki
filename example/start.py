@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Mon Aug 24 13:59:15 2015 mstenber
-# Edit time:     306 min
+# Last modified: Tue Aug 25 10:07:50 2015 mstenber
+# Edit time:     314 min
 #
 """
 
@@ -144,7 +144,7 @@ class HomeState:
         # We're valid in general
         daylight = suncalc.within_zenith()
         o = db.get_by_oid(LS)
-        if o and o.value <= 30:
+        if o and o.value <= 30 and not _changed_within(MS, 30):
             self.dark_time = time.time()
         if daylight and (time.time() - self.dark_time) < DARK_CHECK_INTERVAL:
             daylight = False
@@ -256,8 +256,6 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
             if not c:
                 continue
             dt = time.time() - c
-            if dt > state.within:
-                continue
             if maybe_away and dt > AWAY_GRACE_PERIOD:
                 return AwayState
             return state
@@ -320,27 +318,31 @@ def _object_changed(o, key, old, new, **kwargs):
     _debug('object_change: %s/%s: %s=>%s %s', o.id, key, old, new, kwargs)
     h.some_object_changed()
 
-_prdb_kh.Home.set_create_owner_instance_callback(Home)
-_debug('creating official database instance')
-db = kh.get_database()
-# Autorotate > megabyte sized ones
-if not os.path.exists(LOGDIR):
-    os.mkdir(LOGDIR)
-logger = db.new_logger_to_directory(LOGDIR, autorotate=1000000)
-h = _prdb_kh.Home.new_named().get_owner()
-db.object_added.connect(_object_added)
-db.object_changed.connect(_object_changed)
+if __name__ == '__main__':
+    p = khserver.create_shared_argparser('start')
+    args = khserver.parse_shared(p)
 
-# Up to this point we do not have threads really running, so start
-# caring about locking only now..
-_prdb_kh.set_lock_check_enabled(True)
+    _prdb_kh.Home.set_create_owner_instance_callback(Home)
+    _debug('creating official database instance')
+    db = kh.get_database()
+    # Autorotate > megabyte sized ones
+    if not os.path.exists(LOGDIR):
+        os.mkdir(LOGDIR)
+    logger = db.new_logger_to_directory(LOGDIR, autorotate=1000000)
+    h = _prdb_kh.Home.new_named().get_owner()
+    db.object_added.connect(_object_added)
+    db.object_changed.connect(_object_changed)
 
-with _prdb_kh.lock:
-    khserver.start()
-    if socket.gethostname() == 'poro.lan':
-        poroserver.start()
+    # Up to this point we do not have threads really running, so start
+    # caring about locking only now..
+    _prdb_kh.set_lock_check_enabled(True)
+
+    with _prdb_kh.lock:
+        khserver.start()
+        if socket.gethostname() == 'poro.lan':
+            poroserver.start()
 
 
-updater.add(h)
+    updater.add(h)
 
-# threads will implicitly do their stuff ..
+    # threads will implicitly do their stuff ..

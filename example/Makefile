@@ -6,8 +6,8 @@
 # Copyright (c) 2015 Markus Stenberg
 #
 # Created:       Mon Aug 24 10:33:31 2015 mstenber
-# Last modified: Mon Aug 24 10:58:40 2015 mstenber
-# Edit time:     4 min
+# Last modified: Tue Aug 25 10:00:00 2015 mstenber
+# Edit time:     6 min
 #
 #
 
@@ -17,12 +17,14 @@
 PYTHON=python3.4
 RSYNCTARGETS=../example ../kodinhenki ../../prdb/prdb ../../pysyma/pysyma
 
-all: local cer.push pi.push
+all: local push
 
 local:
 	(cd ../../prdb && tox && $(PYTHON) setup.py install)
 	(cd ../../pysyma && tox && $(PYTHON) setup.py install)
 	(cd .. && tox && $(PYTHON) setup.py install)
+
+push: cer.push pi.push
 
 cer.push:
 	rsync -a --delete $(RSYNCTARGETS) cer.lan:python

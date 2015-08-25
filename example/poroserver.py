@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Sun Aug 23 12:24:39 2015 mstenber
-# Edit time:     19 min
+# Last modified: Tue Aug 25 10:06:46 2015 mstenber
+# Edit time:     21 min
 #
 """
 
@@ -17,8 +17,7 @@ idle on the computer + what's going on with the projector software.
 
 """
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+import khserver
 
 import kodinhenki as kh
 import kodinhenki.process as process
@@ -63,7 +62,8 @@ def start():
     kh.get_database().object_changed.connect(_f)
 
 if __name__ == '__main__':
-    _prdb_kh.set_lock_check_enabled(True)
+    p = khserver.create_shared_argparser('poroserver')
+    args = khserver.parse_shared(p)
     with _prdb_kh.lock:
         sync.start()
         start()
