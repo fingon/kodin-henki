@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Mon Jan 19 11:53:56 2015 mstenber
-# Edit time:     148 min
+# Last modified: Tue Aug 25 14:40:23 2015 mstenber
+# Edit time:     152 min
 #
 """
 
@@ -66,19 +66,18 @@ class HueUpdater(prdb.Owner, _updater.Updated):
         _debug('bulb_changed %s %s %s %s', b, key, new, by)
         if not (key == 'on' and by != BY_US):
             return
-        _debug('setting light state %s=%s', b.o.light_name, new)
-        light_name = b.o.get('light_name')
+        _debug('setting light state %s=%s', b.light_name, new)
         b = self.get_bridge(force=self.dynamically_update_lights)
         d = b.get_light_objects(mode='name')
-        lo = d.get(light_name, None)
+        lo = d.get(b.light_name, None)
         if not lo:
-            raise KeyError(light_name)
+            raise KeyError(b.light_name)
         lo.on = new
         self.mark_dirty()
     def get_bridge(self, force=False):
         if not self._b or force:
             with _prdb_kh.lock:
-                self._b = phue.Bridge(self.o.get('ip'))
+                self._b = phue.Bridge(self.ip)
         return self._b
     def mark_dirty(self):
         self._lights_dirty_after = 0
@@ -92,14 +91,17 @@ class HueUpdater(prdb.Owner, _updater.Updated):
         for name, light in lobs.items():
             is_on = light.on
             with _prdb_kh.lock:
-                bulb = _prdb_kh.HueBulb.new_named(name, light_name=name, on=is_on).get_owner()
+                b = _prdb_kh.HueBulb.new_named(name, on=is_on).get_owner()
+                b.light_name = name
         self._lights_dirty_after = time.time() + self.light_check_interval
         # we're automatically readded post-update
 
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 
-def get_updater(**kwargs):
-    return _prdb_kh.HueUpdater.new_named(**kwargs).get_owner()
+def get_updater(ip, **kwargs):
+    o = _prdb_kh.HueUpdater.new_named(**kwargs).get_owner()
+    o.ip = ip
+    return o
 
 # backwards compatible API
 get = get_updater
