@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Mon Aug 24 10:49:03 2015 mstenber
-# Edit time:     48 min
+# Last modified: Tue Aug 25 23:19:04 2015 mstenber
+# Edit time:     49 min
 #
 """
 
@@ -58,6 +58,7 @@ lock = util.create_rlock(assert_without=[updater._queue_lock])
 import prdb.db as _db
 
 _enable_lock_check = False
+_instrumented_classes = False
 
 def _instrument_class_method_check_lock(cl, k):
     v = getattr(cl, k)
@@ -75,11 +76,12 @@ def _instrument_class_check_lock(cl, recurse=False):
     if recurse:
         _instrument_class_check_lock(super(cl), recurse)
 
-_instrument_class_check_lock(_db.Database)
-_instrument_class_check_lock(_db.Object)
-
 def set_lock_check_enabled(x):
-    global _enable_lock_check
+    global _enable_lock_check, _instrumented_classes
+    if not _instrumented_classes:
+        _instrument_class_check_lock(_db.Database)
+        _instrument_class_check_lock(_db.Object)
+        _instrumented_classes = True
     old = _enable_lock_check
     _enable_lock_check = x
     return old
