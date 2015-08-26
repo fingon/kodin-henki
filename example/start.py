@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Wed Aug 26 00:20:30 2015 mstenber
-# Edit time:     316 min
+# Last modified: Wed Aug 26 11:03:49 2015 mstenber
+# Edit time:     320 min
 #
 """
 
@@ -65,7 +65,7 @@ SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
 
 AWAY_GRACE_PERIOD=300
 
-DARK_CHECK_INTERVAL=(3600*3)
+DARK_CHECK_INTERVAL=3600
 
 _seen_on = {}
 
@@ -91,6 +91,18 @@ def _changed_within(e, x):
     if c is None or c is True:
         return c
     return time.time() - x < c
+
+_dark_time = 0
+
+def is_daylight():
+    global _dark_time
+    daylight = suncalc.within_zenith()
+    o = db.get_by_oid(LS)
+    if o and o.get('value', 100) <= 30 and not _changed_within(MS, 30):
+        _dark_time = time.time()
+    if daylight and (time.time() - _dark_time) < DARK_CHECK_INTERVAL:
+        daylight = False
+    return daylight
 
 class HomeState:
     lights = [LC, LK, LR, LB, LT] # the lights we control
@@ -139,15 +151,9 @@ class HomeState:
     # What to do when leaving this state
     def leave(self):
         pass
-    dark_time = 0
     def update_lights(self):
         # We're valid in general
-        daylight = suncalc.within_zenith()
-        o = db.get_by_oid(LS)
-        if o and o.value <= 30 and not _changed_within(MS, 30):
-            self.dark_time = time.time()
-        if daylight and (time.time() - self.dark_time) < DARK_CHECK_INTERVAL:
-            daylight = False
+        daylight = is_daylight()
         h = {}
         for light in self.lights:
             state = self.get_light_state(daylight, light)
