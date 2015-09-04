@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Wed Aug 26 14:20:35 2015 mstenber
-# Edit time:     321 min
+# Last modified: Fri Sep  4 11:11:24 2015 mstenber
+# Edit time:     322 min
 #
 """
 
@@ -60,8 +60,8 @@ LT='.kh.hue.Toilet'
 
 # Which light do we care about when it's daylight?
 DAYLIGHT_LIGHTS=[LT, LC]
-SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1}
-#SENSOR_BUILT_IN_DELAY={}
+#SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1} # now done in ua
+SENSOR_BUILT_IN_DELAY={}
 
 AWAY_GRACE_PERIOD=300
 
