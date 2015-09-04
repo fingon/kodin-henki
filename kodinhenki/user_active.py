@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 15:25:26 2014 mstenber
-# Last modified: Wed Jan 28 22:04:50 2015 mstenber
-# Edit time:     27 min
+# Last modified: Fri Sep  4 11:09:50 2015 mstenber
+# Edit time:     30 min
 #
 """
 
@@ -27,7 +27,7 @@ import kodinhenki.prdb_kh as _prdb_kh
 import subprocess
 import threading
 import os
-
+import time
 
 import logging
 logger = logging.getLogger(__name__)
@@ -68,7 +68,8 @@ class UserActivityMonitor(prdb.Owner):
     def handle_state(self, state):
         with _prdb_kh.lock:
             if state == '0':
-                self.o.set('on', False)
+                t = time.time()-user_active_period
+                self.o.set('on', False, when=t)
                 return
             elif state == '1':
                 self.o.set('on', True)
