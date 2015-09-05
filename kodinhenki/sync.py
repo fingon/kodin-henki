@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Wed Oct  1 13:15:48 2014 mstenber
-# Last modified: Mon Aug 24 18:05:00 2015 mstenber
-# Edit time:     215 min
+# Last modified: Sat Sep  5 21:26:19 2015 mstenber
+# Edit time:     220 min
 #
 """
 
@@ -76,9 +76,9 @@ class Syncer(pysyma.shsp.SHSPSubscriber):
     def write(self, oid, key, new, when):
         if oid[0] == '_': return
         skey = '%s/%s' % (oid, key)
-        if not self.updates:
-            self.p.sys.schedule(0, self.push_updates)
         self.updates.append((({skey : new},), {'ts': when}))
+        if len(self.updates) == 1:
+            self.p.sys.schedule(0, self.push_updates)
     def network_consistent_event(self, c):
         if c:
             in_sync()
