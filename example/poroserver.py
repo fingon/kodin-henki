@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 #
@@ -7,7 +7,7 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Tue Aug 25 10:06:46 2015 mstenber
+# Last modified: Sat Jan  9 15:10:07 2016 mstenber
 # Edit time:     21 min
 #
 """
@@ -27,7 +27,8 @@ import kodinhenki.prdb_kh as _prdb_kh
 import os
 
 def _monitor_off():
-    os.system('pmset displaysleepnow')
+    os.system('pmset displaysleepnow') # 10.11.2 breaks this horribly
+    pass
 
 def _itunes_pause():
     os.system('osascript "/Users/mstenber/Library/Scripts/itunes pause.scpt"')

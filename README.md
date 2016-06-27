@@ -53,5 +53,10 @@ Non-goals
 * 'efficiency' - all I care is fast development, and relative robustness of
   the final solution.
   
-  
+Known bugs
+==========
 
+* For some reason, at significant uptime (e.g. ~34 days) around Oct/Nov
+  2015 wifi detection started to bug; killed on 20th of Nov.
+
+root      1786  3.4  5.6  20008  7184 pts/0    Sl+  Oct17 1719:34 python /root/python/example/start.py
