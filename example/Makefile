@@ -6,7 +6,7 @@
 # Copyright (c) 2015 Markus Stenberg
 #
 # Created:       Mon Aug 24 10:33:31 2015 mstenber
-# Last modified: Tue Aug 25 10:00:00 2015 mstenber
+# Last modified: Sat Sep 17 09:54:17 2016 mstenber
 # Edit time:     6 min
 #
 #
@@ -14,7 +14,7 @@
 # This is convenience stuff just for my home infra - yours is probably
 # different, so steer clear :)
 
-PYTHON=python3.4
+PYTHON=python3
 RSYNCTARGETS=../example ../kodinhenki ../../prdb/prdb ../../pysyma/pysyma
 
 all: local push

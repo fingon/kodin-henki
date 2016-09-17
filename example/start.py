@@ -7,7 +7,7 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Fri Sep  4 11:11:24 2015 mstenber
+# Last modified: Sat Sep 17 09:53:58 2016 mstenber
 # Edit time:     322 min
 #
 """
@@ -23,55 +23,57 @@ idle or non-idle state and potentially also manipulate their own state (such as 
 
 """
 
-import os
-import time
-import socket
 import datetime
-
 import logging
-logger = logging.getLogger(__name__)
-_debug = logger.debug
+import os
+import socket
+import time
+
+import kodinhenki as kh
+import kodinhenki.hue as hue
+import kodinhenki.prdb_kh as _prdb_kh
+import kodinhenki.suncalc as suncalc
+import kodinhenki.updater as updater
+import kodinhenki.user_active as ua
 
 import khserver
 import poroserver
-
 import prdb
-import kodinhenki as kh
-import kodinhenki.hue as hue
-import kodinhenki.user_active as ua
-import kodinhenki.updater as updater
-import kodinhenki.suncalc as suncalc
-import kodinhenki.prdb_kh as _prdb_kh
+
+logger = logging.getLogger(__name__)
+_debug = logger.debug
+
 
 # activity sources
-IP='.kh.user_active.poro'
-#MS='.kh.wemo_motion.motion'
-LS='.kh.light_sensor.corridor'
-MS='.kh.motion_sensor.corridor'
-PHONES=['.kh.wifi.iphone6', '.kh.wifi.nexus5']
+IP = '.kh.user_active.poro'
+# MS='.kh.wemo_motion.motion'
+LS = '.kh.light_sensor.corridor'
+MS = '.kh.motion_sensor.corridor'
+PHONES = ['.kh.wifi.iphone']
 
 # lights to be controlled
-LB='.kh.hue.Bed'
-LC='.kh.hue.Entry'
-LK='.kh.hue.Kitchen'
-LR='.kh.hue.Living'
-#WT='.kh.wemo_switch.switch2'
-LT='.kh.hue.Toilet'
+LB = '.kh.hue.Bed'
+LC = '.kh.hue.Entry'
+LK = '.kh.hue.Kitchen'
+LR = '.kh.hue.Living'
+# WT='.kh.wemo_switch.switch2'
+LT = '.kh.hue.Toilet'
 
 # Which light do we care about when it's daylight?
-DAYLIGHT_LIGHTS=[LT, LC]
-#SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1} # now done in ua
-SENSOR_BUILT_IN_DELAY={}
+DAYLIGHT_LIGHTS = [LT, LC]
+# SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1} # now done in ua
+SENSOR_BUILT_IN_DELAY = {}
 
-AWAY_GRACE_PERIOD=300
+AWAY_GRACE_PERIOD = 300
 
-DARK_CHECK_INTERVAL=3600
+DARK_CHECK_INTERVAL = 3600
 
-DARK_THRESHOLD=20 # in lux; 60w lightbulb =~ 100
+DARK_THRESHOLD = 20  # in lux; 60w lightbulb =~ 100
 
 _seen_on = {}
 
-LOGDIR='/tmp/kh' # ramdisk on cer, ssd on pro
+LOGDIR = '/tmp/kh'  # ramdisk on cer, ssd on pro
+
 
 def _last_changed(e):
     o = db.get_by_oid(e)
@@ -88,6 +90,7 @@ def _last_changed(e):
         return
     return o.get_changed('on') - delay
 
+
 def _changed_within(e, x):
     c = _last_changed(e)
     if c is None or c is True:
@@ -95,6 +98,7 @@ def _changed_within(e, x):
     return time.time() - x < c
 
 _dark_time = 0
+
 
 def is_daylight():
     global _dark_time
@@ -106,12 +110,14 @@ def is_daylight():
         daylight = False
     return daylight
 
+
 class HomeState:
-    lights = [LC, LK, LR, LB, LT] # the lights we control
-    lights_on = None # lights that are always on
-    sensor = None # sensor to monitor (see within next)
-    within = None # how recently it must have been active to apply
-    lights_conditional = {} # light => (sensor, timeout) mapping
+    lights = [LC, LK, LR, LB, LT]  # the lights we control
+    lights_on = None  # lights that are always on
+    sensor = None  # sensor to monitor (see within next)
+    within = None  # how recently it must have been active to apply
+    lights_conditional = {}  # light => (sensor, timeout) mapping
+
     def next_update_in_seconds(self):
         nt = None
         t = time.time()
@@ -142,17 +148,21 @@ class HomeState:
             if d <= 300:
                 return nt - t
         return 60
+
     @classmethod
     def valid(cls):
         if cls.sensor and not _changed_within(cls.sensor, cls.within):
             return False
         return True
     # What to do when entering this state
+
     def enter(self):
         pass
     # What to do when leaving this state
+
     def leave(self):
         pass
+
     def update_lights(self):
         # We're valid in general
         daylight = is_daylight()
@@ -161,6 +171,7 @@ class HomeState:
             state = self.get_light_state(daylight, light)
             h[light] = state
         return h
+
     def get_light_state(self, daylight, light):
         # XXX - some override method at some point
         if daylight and light not in DAYLIGHT_LIGHTS:
@@ -172,45 +183,54 @@ class HomeState:
         override = self.lights_conditional.get(light, None)
         return override and _changed_within(*override) or False
 
+
 class ProjectorState(HomeState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
     lights_conditional = {LC: (MS, 30), LT: (MS, 900)}
 
+
 class MobileState(HomeState):
     " Most recently seen in corridor - could be even outside. "
-    within = 3600 * 3 # within 3 hours
+    within = 3600 * 3  # within 3 hours
     lights_on = [LR, LK]
     sensor = MS
     lights_conditional = {LC: (MS, 300), LT: (MS, 3600)}
+
     def enter(self):
         #_monitor_off() # significant power hog, waiting 3 hours not sensible
         # .. it's just 10 minutes. who cares. more annoying to have it resync
         # n/a also here, as this may run on cer
         pass
 
+
 class AwayState(HomeState):
     # Just operate the motion sensor triggered ones, if there is motion
     # (if it gets triggered, our state should change soon-ish anyway)
     lights_conditional = {LC: (MS, 300), LT: (MS, 900)}
 
+
 class ComputerState(HomeState):
     " Unidle at one of the computers. "
-    within = 3600 * 3 # within 3 hours
+    within = 3600 * 3  # within 3 hours
     sensor = IP
     lights_on = [LR, LK]
 
+
 class TimeoutState(HomeState):
     " This state we enter if one of the others actually times out (Mobile/Computer-). In that case, all we do is just pause itunes if it's running, monitor has timed out long time ago most likely. "
+
     def enter(self):
         #_itunes_pause()
         # n/a here, as this may run on cer
         pass
+
 
 class NightState(ProjectorState):
     within = 3600 * 8
     sensor = LB
     # _only_ control toilet lightning, based on motion rules
     lights = [LT]
+
 
 def _most_recent(e, *el):
     c = _last_changed(e)
@@ -227,8 +247,10 @@ def _most_recent(e, *el):
             return False
     return True
 
+
 class Home(prdb.Owner, _prdb_kh.LockedUpdated):
     state = HomeState()
+
     def determine_state_class(self):
         """ This is the main place where we determine the overall
         'home state'. Later on, if the chosen state is not valid
@@ -236,7 +258,8 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         means all off in any case."""
         xbmc = _prdb_kh.Process.get_named('kodi')
         st = xbmc and xbmc.get('on', None)
-        if st: return ProjectorState
+        if st:
+            return ProjectorState
 
         maybe_away = False
         lc_phones = [_last_changed(x) for x in PHONES]
@@ -269,13 +292,16 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
             return state
         if maybe_away:
             return AwayState
+
     def locked_next_update_in_seconds(self):
         if self.pending:
-            return 0.1 # pending state change -> 0.1 second delay
+            return 0.1  # pending state change -> 0.1 second delay
         return self.state.next_update_in_seconds()
+
     def some_object_changed(self):
         self.pending = True
         self.next_update_in_seconds_changed()
+
     def locked_update(self, *unused):
         self.pending = False
         cls = self.determine_state_class()
@@ -302,6 +328,7 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         # XXX - not elegant, but make sure the hue hasn't changed under us..
         # WeMo notifications should be ~real time, Hue NOT.
         hue_changed = [False]
+
         def _f(o, key, **kwargs):
             if key == 'on':
                 hue_changed[0] = True
@@ -318,8 +345,10 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         # (if we actually had any changes..)
         logger.flush()
 
+
 def _object_added(**kwargs):
     _debug('object_added %s', kwargs)
+
 
 def _object_changed(o, key, old, new, **kwargs):
     _debug('object_change: %s/%s: %s=>%s %s', o.id, key, old, new, kwargs)
@@ -348,7 +377,6 @@ if __name__ == '__main__':
         khserver.start()
         if socket.gethostname() == 'poro.lan':
             poroserver.start()
-
 
     updater.add(h)
 
