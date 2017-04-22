@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Sat Apr 22 14:57:00 2017 mstenber
-# Edit time:     192 min
+# Last modified: Sat Apr 22 16:34:57 2017 mstenber
+# Edit time:     195 min
 #
 """
 
@@ -151,15 +151,15 @@ class HueUpdater(prdb.Owner, _updater.Updated):
                     # TBD: Does this need better smoothing?
                     with _prdb_kh.lock:
                         _prdb_kh.HueTemperature.new_named(name, value=value)
-                        # b = v.get_owner()
-                        # b.light_name = name
+
         if self.ambient_light_timer.if_expired_reset():
             sensors = sensors or b.get_sensor_objects()
             for i, o in enumerate(sensors, 1):
                 if o.name.startswith('Hue ambient light sensor'):
                     name = sensors[i - 1 - 1].name
-                    value = 10 ** (o.state['lightlevel'] / 10000)
-                    # TBD: Do we want to stick this somewhere?
+                    value = int(10 ** (o.state['lightlevel'] / 10000.0))
+                    with _prdb_kh.lock:
+                        _prdb_kh.HueLight.new_named(name, value=value)
 
         if self.motion_timer.if_expired_reset():
             sensors = sensors or self._motion_sensors
