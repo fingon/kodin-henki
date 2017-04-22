@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat Apr 22 14:52:30 2017 mstenber
-# Edit time:     330 min
+# Last modified: Sat Apr 22 16:34:14 2017 mstenber
+# Edit time:     334 min
 #
 """
 
@@ -46,8 +46,7 @@ _debug = logger.debug
 
 # activity sources
 IP = '.kh.user_active.poro'
-# MS='.kh.wemo_motion.motion'
-LS = '.kh.light_sensor.corridor'
+LS = '.kh.hue_light.KitchenM'
 PHONES = ['.kh.wifi.iphone']
 MST = '.kh.hue_motion.BathroomM'
 MSH = '.kh.hue_motion.HallwayM'
@@ -198,11 +197,12 @@ class MobileState(HomeState):
     sensor = MSH
     lights_conditional = {LC: (MSH, 300), LT: (MST, 900)}
 
-    def enter(self):
-        #_monitor_off() # significant power hog, waiting 3 hours not sensible
-        # .. it's just 10 minutes. who cares. more annoying to have it resync
-        # n/a also here, as this may run on cer
-        pass
+
+class KitchenState(HomeState):
+    " Most recently seen in corridor - could be even outside. "
+    within = 3600 * 3  # within 3 hours
+    lights_on = [LR, LK]
+    sensor = MSK
 
 
 class ToiletState(HomeState):
@@ -211,12 +211,6 @@ class ToiletState(HomeState):
     lights_on = [LT]
     sensor = MST
     lights_conditional = {LC: (MSH, 300)}
-
-    def enter(self):
-        #_monitor_off() # significant power hog, waiting 3 hours not sensible
-        # .. it's just 10 minutes. who cares. more annoying to have it resync
-        # n/a also here, as this may run on cer
-        pass
 
 
 class AwayState(HomeState):
@@ -290,7 +284,8 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         if _changed_within(NightState.sensor, NightState.within) and datetime.datetime.now().hour < 10:
             return NightState
 
-        states = [NightState, ComputerState, MobileState]
+        states = [NightState, ComputerState,
+                  MobileState, KitchenState, ToiletState]
         sensors = [state.sensor for state in states]
         for state in states:
             # We care about state-specific sensor being most recently
