@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat Sep 17 09:53:58 2016 mstenber
-# Edit time:     322 min
+# Last modified: Sat Apr 22 14:52:30 2017 mstenber
+# Edit time:     330 min
 #
 """
 
@@ -48,8 +48,10 @@ _debug = logger.debug
 IP = '.kh.user_active.poro'
 # MS='.kh.wemo_motion.motion'
 LS = '.kh.light_sensor.corridor'
-MS = '.kh.motion_sensor.corridor'
 PHONES = ['.kh.wifi.iphone']
+MST = '.kh.hue_motion.BathroomM'
+MSH = '.kh.hue_motion.HallwayM'
+MSK = '.kh.hue_motion.KitchenM'
 
 # lights to be controlled
 LB = '.kh.hue.Bed'
@@ -104,7 +106,7 @@ def is_daylight():
     global _dark_time
     daylight = suncalc.within_zenith()
     o = db.get_by_oid(LS)
-    if o and o.get('value', 100) <= DARK_THRESHOLD and not _changed_within(MS, 30):
+    if o and o.get('value', 100) <= DARK_THRESHOLD:
         _dark_time = time.time()
     if daylight and (time.time() - _dark_time) < DARK_CHECK_INTERVAL:
         daylight = False
@@ -186,15 +188,29 @@ class HomeState:
 
 class ProjectorState(HomeState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
-    lights_conditional = {LC: (MS, 30), LT: (MS, 900)}
+    lights_conditional = {LC: (MSH, 30), LT: (MST, 900)}
 
 
 class MobileState(HomeState):
     " Most recently seen in corridor - could be even outside. "
     within = 3600 * 3  # within 3 hours
     lights_on = [LR, LK]
-    sensor = MS
-    lights_conditional = {LC: (MS, 300), LT: (MS, 3600)}
+    sensor = MSH
+    lights_conditional = {LC: (MSH, 300), LT: (MST, 900)}
+
+    def enter(self):
+        #_monitor_off() # significant power hog, waiting 3 hours not sensible
+        # .. it's just 10 minutes. who cares. more annoying to have it resync
+        # n/a also here, as this may run on cer
+        pass
+
+
+class ToiletState(HomeState):
+    " Most recently activity in toilet, probably not outside. "
+    within = 3600 * 2  # within 2 hours
+    lights_on = [LT]
+    sensor = MST
+    lights_conditional = {LC: (MSH, 300)}
 
     def enter(self):
         #_monitor_off() # significant power hog, waiting 3 hours not sensible
@@ -206,7 +222,7 @@ class MobileState(HomeState):
 class AwayState(HomeState):
     # Just operate the motion sensor triggered ones, if there is motion
     # (if it gets triggered, our state should change soon-ish anyway)
-    lights_conditional = {LC: (MS, 300), LT: (MS, 900)}
+    lights_conditional = {LC: (MSH, 300), LT: (MST, 3600)}
 
 
 class ComputerState(HomeState):
