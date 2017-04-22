@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Tue Aug 25 15:04:53 2015 mstenber
-# Edit time:     155 min
+# Last modified: Sat Apr 22 14:57:00 2017 mstenber
+# Edit time:     192 min
 #
 """
 
@@ -22,45 +22,77 @@ Basic idea:
 
 """
 
-MAIN_NAME='hue'
-BULB_NAME='%s.%s'
-
-import prdb
-import kodinhenki
-import kodinhenki.prdb_kh as _prdb_kh
-import kodinhenki.updater as _updater
-import phue
+import logging
 import time
 
-BY_US='hue'
+import kodinhenki.prdb_kh as _prdb_kh
+import kodinhenki.updater as _updater
 
-import logging
+import phue
+import prdb
+
+BY_US = 'hue'
+
 _debug = logging.debug
 _error = logging.error
 
+
 class HueBulb(prdb.Owner):
+
     def object_changed(self, **kwargs):
         get_updater().bulb_changed(self, **kwargs)
+
     def is_on(self):
         return self.o.get('on')
+
     def turn_on(self):
         self.o.set('on', True)
+
     def turn_off(self):
         self.o.set('on', False)
 
 _prdb_kh.HueBulb.set_create_owner_instance_callback(HueBulb)
 
+
+class RepeatingTimer:
+
+    def __init__(self, interval):
+        self.interval = interval
+        self.force()
+
+    def force(self):
+        self.t = 0
+
+    def if_expired_reset(self):
+        if self.is_expired():
+            self.reset()
+            return True
+
+    def is_expired(self):
+        return not (self.time_left() > 0)
+
+    def reset(self):
+        self.t = time.time()
+
+    def time_left(self):
+        return max(0, (self.t + self.interval) - time.time())
+
+
 class HueUpdater(prdb.Owner, _updater.Updated):
     # How long do we believe in the 'current' timestamp?
     # (in seconds)
-    light_check_interval = 30
+    light_check_timer = RepeatingTimer(10)
+
+    temperature_timer = RepeatingTimer(300)  # won't get updated more often
+    ambient_light_timer = RepeatingTimer(300)  # TBD
+    motion_timer = RepeatingTimer(3)  # as often as possible
 
     # Update set of available lights dynamically (if not,
     # no need to re-create bridge object every now and then)
     dynamically_update_lights = False
 
-    _lights_dirty_after = 0
     _b = None
+    _motion_sensors = []
 
     def bulb_changed(self, b, key, new, by, **kwargs):
         _debug('bulb_changed %s %s %s %s', b, key, new, by)
@@ -74,29 +106,79 @@ class HueUpdater(prdb.Owner, _updater.Updated):
             raise KeyError(b.light_name)
         lo.on = new
         self.mark_dirty()
+
     def get_bridge(self, force=False):
         if not self._b or force:
             with _prdb_kh.lock:
                 self._b = phue.Bridge(self.ip)
         return self._b
+
     def mark_dirty(self):
-        self._lights_dirty_after = 0
+        self.light_check_timer.force()
         self.next_update_in_seconds_changed()
-    # Updated implementation
+
     def next_update_in_seconds(self):
-        return self._lights_dirty_after - time.time()
+        return min(self.light_check_timer.time_left(),
+                   self.motion_timer.time_left())
+
     def update(self):
         b = self.get_bridge(force=self.dynamically_update_lights)
-        lobs = b.get_light_objects(mode='name')
-        for name, light in lobs.items():
-            is_on = light.on
-            with _prdb_kh.lock:
-                b = _prdb_kh.HueBulb.new_named(name, on=is_on).get_owner()
-                b.light_name = name
-        self._lights_dirty_after = time.time() + self.light_check_interval
-        # we're automatically readded post-update
+        if self.light_check_timer.if_expired_reset():
+            lobs = b.get_light_objects(mode='name')
+            for name, light in lobs.items():
+                is_on = light.on
+                with _prdb_kh.lock:
+                    o = _prdb_kh.HueBulb.new_named(name, on=is_on).get_owner()
+                    o.light_name = name
+
+        # Philips Motion sensors are funny beasts; they
+        # have at index N one with e.g. battery, presence.
+        #
+        # N-1 = Hue temperature sensor ..
+        # N + 1 = Hue ambient light sensor ..
+        # N + 2 = MotionSensor
+        #
+        # (additional -1 in the accesses due to Python list index
+        # starting at 0, not 1)
+
+        sensors = None
+        if self.temperature_timer.if_expired_reset():
+            sensors = sensors or b.get_sensor_objects()
+            for i, o in enumerate(sensors, 1):
+                if o.name.startswith('Hue temperature sensor'):
+                    name = sensors[i + 1 - 1].name
+                    value = '%.1f' % round(o.state['temperature'] / 100.0, 1)
+                    # TBD: Does this need better smoothing?
+                    with _prdb_kh.lock:
+                        _prdb_kh.HueTemperature.new_named(name, value=value)
+                        # b = v.get_owner()
+                        # b.light_name = name
+        if self.ambient_light_timer.if_expired_reset():
+            sensors = sensors or b.get_sensor_objects()
+            for i, o in enumerate(sensors, 1):
+                if o.name.startswith('Hue ambient light sensor'):
+                    name = sensors[i - 1 - 1].name
+                    value = 10 ** (o.state['lightlevel'] / 10000)
+                    # TBD: Do we want to stick this somewhere?
+
+        if self.motion_timer.if_expired_reset():
+            sensors = sensors or self._motion_sensors
+            motion_sensors = []
+            for i, o in enumerate(sensors, 1):
+                if o.name.endswith('M'):
+                    name = o.name
+                    presence = o.state.get('presence')
+                    if presence is None:
+                        continue
+                    motion_sensors.append(o)
+                    with _prdb_kh.lock:
+                        _prdb_kh.HueMotion.new_named(name, on=presence)
+                        # b = v.get_owner()
+                        # b.light_name = name
+                    self._motion_sensors = motion_sensors
 
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
+
 
 def get_updater(ip=None, **kwargs):
     o = _prdb_kh.HueUpdater.new_named(**kwargs).get_owner()
