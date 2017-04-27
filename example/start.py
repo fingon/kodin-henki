@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat Apr 22 16:34:14 2017 mstenber
-# Edit time:     334 min
+# Last modified: Thu Apr 27 08:07:12 2017 mstenber
+# Edit time:     354 min
 #
 """
 
@@ -59,11 +59,10 @@ LK = '.kh.hue.Kitchen'
 LR = '.kh.hue.Living'
 # WT='.kh.wemo_switch.switch2'
 LT = '.kh.hue.Toilet'
+TAP_OFF = '.kh.hue_tap.Tap.off'
 
 # Which light do we care about when it's daylight?
 DAYLIGHT_LIGHTS = [LT, LC]
-# SENSOR_BUILT_IN_DELAY={IP: ua.user_active_period + 1} # now done in ua
-SENSOR_BUILT_IN_DELAY = {}
 
 AWAY_GRACE_PERIOD = 300
 
@@ -82,14 +81,12 @@ def _last_changed(e):
         _debug('no %s', e)
         return
     st = o.get('on', None)
-    delay = SENSOR_BUILT_IN_DELAY.get(e, 0)
     if st:
         _seen_on[e] = True
-        if not delay:
-            return True
+        return True
     if not e in _seen_on:
         return
-    return o.get_changed('on') - delay
+    return o.get_changed('on')
 
 
 def _changed_within(e, x):
@@ -237,7 +234,7 @@ class TimeoutState(HomeState):
 
 class NightState(ProjectorState):
     within = 3600 * 8
-    sensor = LB
+    sensor = TAP_OFF
     # _only_ control toilet lightning, based on motion rules
     lights = [LT]
 
