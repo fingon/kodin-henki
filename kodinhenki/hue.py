@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Sat Apr 22 16:34:57 2017 mstenber
-# Edit time:     195 min
+# Last modified: Thu Apr 27 08:04:36 2017 mstenber
+# Edit time:     222 min
 #
 """
 
@@ -22,6 +22,8 @@ Basic idea:
 
 """
 
+import calendar
+import datetime
 import logging
 import time
 
@@ -77,6 +79,11 @@ class RepeatingTimer:
     def time_left(self):
         return max(0, (self.t + self.interval) - time.time())
 
+tap_event2key = {34: 'off',
+                 16: '2',
+                 17: '3',
+                 18: '4'}
+
 
 class HueUpdater(prdb.Owner, _updater.Updated):
     # How long do we believe in the 'current' timestamp?
@@ -87,12 +94,15 @@ class HueUpdater(prdb.Owner, _updater.Updated):
     ambient_light_timer = RepeatingTimer(300)  # TBD
     motion_timer = RepeatingTimer(3)  # as often as possible
 
+    tap_timer = RepeatingTimer(10)
+
     # Update set of available lights dynamically (if not,
     # no need to re-create bridge object every now and then)
     dynamically_update_lights = False
 
     _b = None
     _motion_sensors = []
+    _taps = []
 
     def bulb_changed(self, b, key, new, by, **kwargs):
         _debug('bulb_changed %s %s %s %s', b, key, new, by)
@@ -162,9 +172,10 @@ class HueUpdater(prdb.Owner, _updater.Updated):
                         _prdb_kh.HueLight.new_named(name, value=value)
 
         if self.motion_timer.if_expired_reset():
-            sensors = sensors or self._motion_sensors
+            msensors = sensors or self._motion_sensors
             motion_sensors = []
-            for i, o in enumerate(sensors, 1):
+            self._motion_sensors = motion_sensors
+            for o in msensors:
                 if o.name.endswith('M'):
                     name = o.name
                     presence = o.state.get('presence')
@@ -175,7 +186,27 @@ class HueUpdater(prdb.Owner, _updater.Updated):
                         _prdb_kh.HueMotion.new_named(name, on=presence)
                         # b = v.get_owner()
                         # b.light_name = name
-                    self._motion_sensors = motion_sensors
+
+        if self.tap_timer.if_expired_reset():
+            tsensors = sensors or self._taps
+            taps = []
+            self._taps = taps
+            for sensor in tsensors:
+                name = sensor.name
+                if name.lower().find('tap') >= 0:
+                    st = sensor.state
+                    event = st.get('buttonevent')
+                    lu = st.get('lastupdated')
+                    if event and lu:
+                        taps.append(sensor)
+                        key = tap_event2key[event]
+                        fname = '%s.%s' % (name, key)
+                        o = _prdb_kh.HueTap.new_named(fname)
+                        # Parse the ISO8601 timestamp, assume UTC
+                        dt = datetime.datetime.strptime(
+                            lu, "%Y-%m-%dT%H:%M:%S")
+                        t = calendar.timegm(dt.timetuple())
+                        o.set('on', False, when=t)
 
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 

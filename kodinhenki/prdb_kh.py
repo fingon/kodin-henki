@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Sat Apr 22 14:20:22 2017 mstenber
+# Last modified: Sun Apr 23 23:25:01 2017 mstenber
 # Edit time:     50 min
 #
 """
@@ -40,6 +40,7 @@ HueBulb = KH.declare_class('hue')
 
 HueMotion = KH.declare_class('hue_motion')
 HueLight = KH.declare_class('hue_light')
+HueTap = KH.declare_class('hue_tap')
 HueTemperature = KH.declare_class('hue_temperature')
 
 HueUpdater = KH.declare_class('hue_updater')
