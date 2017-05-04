@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Thu Apr 27 23:46:52 2017 mstenber
-# Edit time:     224 min
+# Last modified: Thu May  4 21:03:53 2017 mstenber
+# Edit time:     244 min
 #
 """
 
@@ -29,8 +29,8 @@ import time
 
 import kodinhenki.prdb_kh as _prdb_kh
 import kodinhenki.updater as _updater
-
 import phue
+
 import prdb
 
 BY_US = 'hue'
@@ -88,13 +88,7 @@ tap_event2key = {34: 'off',
 class HueUpdater(prdb.Owner, _updater.Updated):
     # How long do we believe in the 'current' timestamp?
     # (in seconds)
-    light_check_timer = RepeatingTimer(10)
-
-    temperature_timer = RepeatingTimer(300)  # won't get updated more often
-    ambient_light_timer = RepeatingTimer(300)  # TBD
-    motion_timer = RepeatingTimer(3)  # as often as possible
-
-    tap_timer = RepeatingTimer(10)
+    check_timer = RepeatingTimer(10)
 
     # Update set of available lights dynamically (if not,
     # no need to re-create bridge object every now and then)
@@ -124,90 +118,71 @@ class HueUpdater(prdb.Owner, _updater.Updated):
         return self._b
 
     def mark_dirty(self):
-        self.light_check_timer.force()
+        self.check_timer.force()
         self.next_update_in_seconds_changed()
 
     def next_update_in_seconds(self):
-        return min(self.light_check_timer.time_left(),
-                   self.motion_timer.time_left())
+        return self.check_timer.time_left()
 
     def update(self):
         b = self.get_bridge(force=self.dynamically_update_lights)
-        if self.light_check_timer.if_expired_reset():
-            lobs = b.get_light_objects(mode='name')
-            for name, light in lobs.items():
-                is_on = light.on
-                with _prdb_kh.lock:
-                    o = _prdb_kh.HueBulb.new_named(name, on=is_on).get_owner()
-                    o.light_name = name
+        if not self.check_timer.if_expired_reset():
+            return
+        lights = b.get_light()
+        for _, o in lights.items():
+            name = o['name']
+            is_on = o['state']['on']
+            with _prdb_kh.lock:
+                o = _prdb_kh.HueBulb.new_named(name, on=is_on).get_owner()
+                o.light_name = name
 
-        # Philips Motion sensors are funny beasts; they
-        # have at index N one with e.g. battery, presence.
+        # Convert it to get_sensor_objects style output
+        sensors = b.get_sensor()
+        sensors = [(int(k), v) for k, v in sensors.items()]
+        sensors.sort()
+
+        # Philips Motion sensors are funny beasts; they have:
         #
         # N-1 = Hue temperature sensor ..
+        # N = actual sensor (battery, presence)
         # N + 1 = Hue ambient light sensor ..
         # N + 2 = MotionSensor
         #
         # (additional -1 in the accesses due to Python list index
         # starting at 0, not 1)
 
-        sensors = None
-        if self.temperature_timer.if_expired_reset():
-            sensors = sensors or b.get_sensor_objects()
-            for i, o in enumerate(sensors, 1):
-                if o.name.startswith('Hue temperature sensor'):
-                    name = sensors[i + 1 - 1].name
-                    value = '%.1f' % round(o.state['temperature'] / 100.0, 1)
-                    # TBD: Does this need better smoothing?
+        for i, (_, o) in enumerate(sensors, 1):
+            name = o['name']
+            st = o['state']
+            presence = st.get('presence')
+            if presence is not None:
+                with _prdb_kh.lock:
+                    _prdb_kh.HueMotion.new_named(name, on=presence)
+                    # b = v.get_owner()
+                    # b.light_name = name
+            elif name.startswith('Hue temperature sensor'):
+                name = sensors[i + 1 - 1][1]['name']
+                value = '%.1f' % round(st['temperature'] / 100.0, 1)
+                with _prdb_kh.lock:
+                    _prdb_kh.HueTemperature.new_named(name, value=value)
+            elif name.startswith('Hue ambient light sensor'):
+                name = sensors[i - 1 - 1][1]['name']
+                value = int(10 ** (st['lightlevel'] / 10000.0))
+                with _prdb_kh.lock:
+                    _prdb_kh.HueLight.new_named(name, value=value)
+            elif name.lower().find('tap') >= 0:
+                event = st.get('buttonevent')
+                lu = st.get('lastupdated')
+                if event and lu:
+                    key = tap_event2key[event]
+                    fname = '%s.%s' % (name, key)
+                    # Parse the ISO8601 timestamp, assume UTC
+                    dt = datetime.datetime.strptime(
+                        lu, "%Y-%m-%dT%H:%M:%S")
                     with _prdb_kh.lock:
-                        _prdb_kh.HueTemperature.new_named(name, value=value)
-
-        if self.ambient_light_timer.if_expired_reset():
-            sensors = sensors or b.get_sensor_objects()
-            for i, o in enumerate(sensors, 1):
-                if o.name.startswith('Hue ambient light sensor'):
-                    name = sensors[i - 1 - 1].name
-                    value = int(10 ** (o.state['lightlevel'] / 10000.0))
-                    with _prdb_kh.lock:
-                        _prdb_kh.HueLight.new_named(name, value=value)
-
-        if self.motion_timer.if_expired_reset():
-            msensors = sensors or self._motion_sensors
-            motion_sensors = []
-            self._motion_sensors = motion_sensors
-            for o in msensors:
-                if o.name.endswith('M'):
-                    name = o.name
-                    presence = o.state.get('presence')
-                    if presence is None:
-                        continue
-                    motion_sensors.append(o)
-                    with _prdb_kh.lock:
-                        _prdb_kh.HueMotion.new_named(name, on=presence)
-                        # b = v.get_owner()
-                        # b.light_name = name
-
-        if self.tap_timer.if_expired_reset():
-            tsensors = sensors or self._taps
-            taps = []
-            self._taps = taps
-            for sensor in tsensors:
-                name = sensor.name
-                if name.lower().find('tap') >= 0:
-                    st = sensor.state
-                    event = st.get('buttonevent')
-                    lu = st.get('lastupdated')
-                    if event and lu:
-                        taps.append(sensor)
-                        key = tap_event2key[event]
-                        fname = '%s.%s' % (name, key)
-                        # Parse the ISO8601 timestamp, assume UTC
-                        dt = datetime.datetime.strptime(
-                            lu, "%Y-%m-%dT%H:%M:%S")
-                        with _prdb_kh.lock:
-                            o = _prdb_kh.HueTap.new_named(fname)
-                            t = calendar.timegm(dt.timetuple())
-                            o.set('on', False, when=t)
+                        o = _prdb_kh.HueTap.new_named(fname)
+                        t = calendar.timegm(dt.timetuple())
+                        o.set('on', False, when=t)
 
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 
