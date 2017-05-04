@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Thu Apr 27 08:07:12 2017 mstenber
-# Edit time:     354 min
+# Last modified: Thu Apr 27 23:53:56 2017 mstenber
+# Edit time:     360 min
 #
 """
 
@@ -26,6 +26,7 @@ idle or non-idle state and potentially also manipulate their own state (such as 
 import datetime
 import logging
 import os
+import re
 import socket
 import time
 
@@ -72,6 +73,8 @@ DARK_THRESHOLD = 20  # in lux; 60w lightbulb =~ 100
 
 _seen_on = {}
 
+never_seen_re = re.compile('^\.kh\.hue_tap\.')
+
 LOGDIR = '/tmp/kh'  # ramdisk on cer, ssd on pro
 
 
@@ -84,7 +87,7 @@ def _last_changed(e):
     if st:
         _seen_on[e] = True
         return True
-    if not e in _seen_on:
+    if not e in _seen_on and never_seen_re.match(e) is None:
         return
     return o.get_changed('on')
 

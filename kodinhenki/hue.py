@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Thu Apr 27 08:04:36 2017 mstenber
-# Edit time:     222 min
+# Last modified: Thu Apr 27 23:46:52 2017 mstenber
+# Edit time:     224 min
 #
 """
 
@@ -201,12 +201,13 @@ class HueUpdater(prdb.Owner, _updater.Updated):
                         taps.append(sensor)
                         key = tap_event2key[event]
                         fname = '%s.%s' % (name, key)
-                        o = _prdb_kh.HueTap.new_named(fname)
                         # Parse the ISO8601 timestamp, assume UTC
                         dt = datetime.datetime.strptime(
                             lu, "%Y-%m-%dT%H:%M:%S")
-                        t = calendar.timegm(dt.timetuple())
-                        o.set('on', False, when=t)
+                        with _prdb_kh.lock:
+                            o = _prdb_kh.HueTap.new_named(fname)
+                            t = calendar.timegm(dt.timetuple())
+                            o.set('on', False, when=t)
 
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 
