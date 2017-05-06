@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Oct 27 18:00:17 2014 mstenber
-# Last modified: Sun Apr 23 23:25:01 2017 mstenber
+# Last modified: Sat May  6 13:26:07 2017 mstenber
 # Edit time:     50 min
 #
 """
@@ -57,6 +57,10 @@ Home = KH.declare_class('home')
 UserActive = KH.declare_class('user_active')
 
 WifiDevice = KH.declare_class('wifi')
+
+MPowerUpdater = KH.declare_class('mpower_updater')
+MPower = KH.declare_class('mpower')
+
 
 lock = util.create_rlock(assert_without=[updater._queue_lock])
 

@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Sat Oct  4 12:00:08 2014 mstenber
-# Last modified: Tue Aug 25 10:06:13 2015 mstenber
-# Edit time:     29 min
+# Last modified: Sat May  6 14:00:18 2017 mstenber
+# Edit time:     30 min
 #
 """
 
@@ -22,22 +22,22 @@ remotely.
 
 """
 
-import logging
 import argparse
+import logging
+import socket
 
+import kodinhenki.prdb_kh as _prdb_kh
 import kodinhenki.sync as sync
 import kodinhenki.updater as updater
-import kodinhenki.prdb_kh as _prdb_kh
-
-import socket
 
 is_cer = socket.gethostname() == 'cer'
 
+
 def start_wemo():
     import kodinhenki.wemo.device_tracker as dt
-    ip=None
+    ip = None
     if is_cer:
-        ip='192.168.44.1'
+        ip = '192.168.44.1'
         # The remote_ip based lookup does not really seem to work with v4.
         # Oh well. So hardcode here for the cer case with N addresses.
 
@@ -49,20 +49,25 @@ def start_wemo():
 
 def start():
     import kodinhenki.hue as hue
+    import kodinhenki.mpower as mpower
     import kodinhenki.owrt_wifi as _owrt_wifi
 
     # Start database (implicitly on the hardcoded port + any ip)
     sync.start()
 
     # Start the devices
-    updater.add(hue.get_updater(ip='192.168.44.10'))
+    updater.add(hue.get_updater('192.168.44.10'))
+
+    updater.add(mpower.get_updater('192.168.44.21', 'pro'))
+    updater.add(mpower.get_updater('192.168.44.20', 'mini'))
 
     # WeMo is dead, baby!
-    #start_wemo()
+    # start_wemo()
 
     if is_cer:
         # We're CER => can check locally wifi state
         _owrt_wifi.start()
+
 
 def create_shared_argparser(desc):
     p = argparse.ArgumentParser(description=desc)
@@ -72,14 +77,15 @@ def create_shared_argparser(desc):
                    help='debug locks')
     return p
 
+
 def parse_shared(p):
     args = p.parse_args()
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(name)s %(message)s')
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)-15s %(name)s %(message)s')
     if args.lock:
         _prdb_kh.set_lock_check_enabled(True)
     return args
 
 if __name__ == '__main__':
     start()
-

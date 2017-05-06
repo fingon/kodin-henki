@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Fri May  5 14:34:41 2017 mstenber
-# Edit time:     361 min
+# Last modified: Sat May  6 13:50:13 2017 mstenber
+# Edit time:     364 min
 #
 """
 
@@ -32,6 +32,7 @@ import time
 
 import kodinhenki as kh
 import kodinhenki.hue as hue
+import kodinhenki.mpower
 import kodinhenki.prdb_kh as _prdb_kh
 import kodinhenki.suncalc as suncalc
 import kodinhenki.updater as updater
@@ -52,6 +53,8 @@ PHONES = ['.kh.wifi.iphone']
 MST = '.kh.hue_motion.BathroomM'
 MSH = '.kh.hue_motion.HallwayM'
 MSK = '.kh.hue_motion.KitchenM'
+
+POWER_PROJECTOR = '.kh.mpower.mini_1'
 
 # lights to be controlled
 LB = '.kh.hue.Bed'
@@ -188,6 +191,7 @@ class HomeState:
 class ProjectorState(HomeState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
     lights_conditional = {LC: (MSH, 30), LT: (MST, 900)}
+    sensor = POWER_PROJECTOR
 
 
 class MobileState(HomeState):
