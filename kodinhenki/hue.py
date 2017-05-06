@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Thu May  4 21:03:53 2017 mstenber
-# Edit time:     244 min
+# Last modified: Fri May  5 14:37:35 2017 mstenber
+# Edit time:     246 min
 #
 """
 
@@ -86,9 +86,9 @@ tap_event2key = {34: 'off',
 
 
 class HueUpdater(prdb.Owner, _updater.Updated):
-    # How long do we believe in the 'current' timestamp?
+    # How often do we want to poll the sensors?
     # (in seconds)
-    check_timer = RepeatingTimer(10)
+    check_timer = RepeatingTimer(3)
 
     # Update set of available lights dynamically (if not,
     # no need to re-create bridge object every now and then)
@@ -126,8 +126,7 @@ class HueUpdater(prdb.Owner, _updater.Updated):
 
     def update(self):
         b = self.get_bridge(force=self.dynamically_update_lights)
-        if not self.check_timer.if_expired_reset():
-            return
+        self.check_timer.reset()
         lights = b.get_light()
         for _, o in lights.items():
             name = o['name']
