@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat May  6 13:50:13 2017 mstenber
-# Edit time:     364 min
+# Last modified: Sat May  6 14:07:20 2017 mstenber
+# Edit time:     367 min
 #
 """
 
@@ -271,8 +271,13 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
         'home state'. Later on, if the chosen state is not valid
         (mostly due to timeout), we will default to HomeState which
         means all off in any case."""
-        xbmc = _prdb_kh.Process.get_named('kodi')
-        st = xbmc and xbmc.get('on', None)
+        # Old approach: Detect process running
+        #xbmc = _prdb_kh.Process.get_named('kodi')
+        #st = xbmc and xbmc.get('on', None)
+
+        # New approach: Check if the projectorstate sensor is on
+        st = _last_changed(ProjectorState.sensor) is True
+
         if st:
             return ProjectorState
 
