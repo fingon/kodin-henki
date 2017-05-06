@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Fri May  5 14:37:35 2017 mstenber
-# Edit time:     246 min
+# Last modified: Sat May  6 12:52:48 2017 mstenber
+# Edit time:     251 min
 #
 """
 
@@ -25,7 +25,6 @@ Basic idea:
 import calendar
 import datetime
 import logging
-import time
 
 import kodinhenki.prdb_kh as _prdb_kh
 import kodinhenki.updater as _updater
@@ -44,6 +43,8 @@ class HueBulb(prdb.Owner):
     def object_changed(self, **kwargs):
         get_updater().bulb_changed(self, **kwargs)
 
+    # TBD: methods below seem unused nowadays. Get rid of them?
+
     def is_on(self):
         return self.o.get('on')
 
@@ -56,39 +57,16 @@ class HueBulb(prdb.Owner):
 _prdb_kh.HueBulb.set_create_owner_instance_callback(HueBulb)
 
 
-class RepeatingTimer:
-
-    def __init__(self, interval):
-        self.interval = interval
-        self.force()
-
-    def force(self):
-        self.t = 0
-
-    def if_expired_reset(self):
-        if self.is_expired():
-            self.reset()
-            return True
-
-    def is_expired(self):
-        return not (self.time_left() > 0)
-
-    def reset(self):
-        self.t = time.time()
-
-    def time_left(self):
-        return max(0, (self.t + self.interval) - time.time())
-
 tap_event2key = {34: 'off',
                  16: '2',
                  17: '3',
                  18: '4'}
 
 
-class HueUpdater(prdb.Owner, _updater.Updated):
+class HueUpdater(prdb.Owner, _updater.IntervalUpdated):
     # How often do we want to poll the sensors?
     # (in seconds)
-    check_timer = RepeatingTimer(3)
+    update_interval = 3
 
     # Update set of available lights dynamically (if not,
     # no need to re-create bridge object every now and then)
@@ -117,16 +95,8 @@ class HueUpdater(prdb.Owner, _updater.Updated):
                 self._b = phue.Bridge(self.ip)
         return self._b
 
-    def mark_dirty(self):
-        self.check_timer.force()
-        self.next_update_in_seconds_changed()
-
-    def next_update_in_seconds(self):
-        return self.check_timer.time_left()
-
-    def update(self):
+    def update_in_timer(self):
         b = self.get_bridge(force=self.dynamically_update_lights)
-        self.check_timer.reset()
         lights = b.get_light()
         for _, o in lights.items():
             name = o['name']
@@ -186,10 +156,9 @@ class HueUpdater(prdb.Owner, _updater.Updated):
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 
 
-def get_updater(ip=None, **kwargs):
+def get_updater(ip, **kwargs):
     o = _prdb_kh.HueUpdater.new_named(**kwargs).get_owner()
-    if ip:
-        o.ip = ip
+    o.ip = ip
     return o
 
 # backwards compatible API

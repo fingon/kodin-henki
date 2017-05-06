@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Thu Apr 27 23:53:56 2017 mstenber
-# Edit time:     360 min
+# Last modified: Fri May  5 14:34:41 2017 mstenber
+# Edit time:     361 min
 #
 """
 
@@ -199,10 +199,11 @@ class MobileState(HomeState):
 
 
 class KitchenState(HomeState):
-    " Most recently seen in corridor - could be even outside. "
+    " Most recently seen in kitchen - could be even outside. "
     within = 3600 * 3  # within 3 hours
     lights_on = [LR, LK]
     sensor = MSK
+    lights_conditional = {LC: (MSH, 300), LT: (MST, 300)}
 
 
 class ToiletState(HomeState):
@@ -210,7 +211,7 @@ class ToiletState(HomeState):
     within = 3600 * 2  # within 2 hours
     lights_on = [LT]
     sensor = MST
-    lights_conditional = {LC: (MSH, 300)}
+    lights_conditional = {LC: (MSH, 300), LK: (MSK, 300)}
 
 
 class AwayState(HomeState):

@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Tue Sep 30 07:16:50 2014 mstenber
-# Last modified: Sun Aug 23 12:30:32 2015 mstenber
-# Edit time:     58 min
+# Last modified: Sat May  6 12:34:04 2017 mstenber
+# Edit time:     62 min
 #
 """
 
@@ -28,11 +28,12 @@ can remove+readd object.
 
 """
 
+import logging
+import threading
+import time
+
 from . import util
 
-import threading
-
-import logging
 logger = logging.getLogger(__name__)
 _debug = logger.debug
 _error = logger.error
@@ -40,16 +41,72 @@ _error = logger.error
 _queue = {}
 _queue_lock = util.create_rlock()
 
+
 class Updated:
+
     def next_update_in_seconds_changed(self):
         add(self, update=True)
+
     def next_update_in_seconds(self):
         raise NotImplementedError
+
     def update(self):
         raise NotImplementedError
 
+
+class Timer:
+
+    def __init__(self, interval):
+        self.interval = interval
+        self.force()
+
+    def force(self):
+        self.t = 0
+
+    def if_expired_reset(self):
+        if self.is_expired():
+            self.reset()
+            return True
+
+    def is_expired(self):
+        return not (self.time_left() > 0)
+
+    def reset(self):
+        self.t = time.time()
+
+    def time_left(self):
+        return max(0, (self.t + self.interval) - time.time())
+
+
+class IntervalUpdated(Updated):
+
+    # update_interval = X # child responsibility
+    _timer = None
+
+    def mark_dirty(self):
+        self.timer.force()
+        self.next_update_in_seconds_changed()
+
+    @property
+    def timer(self):
+        if self._timer is None:
+            self._timer = Timer(self.update_interval)
+        return self._timer
+
+    def next_update_in_seconds(self):
+        return self.timer.time_left()
+
+    def update(self):
+        self.timer.reset()
+        self.update_in_timer()
+
+    def update_in_timer(self):
+        raise NotImplementedError
+
+
 def add(o, update=False):
     assert isinstance(o, Updated)
+
     def _run():
         with _queue_lock:
             # If the object somehow disappeared/changed in queue, do nothing
@@ -78,8 +135,10 @@ def add(o, update=False):
         _queue[o] = t
     t.start()
 
+
 def is_empty():
     return not len(_queue)
+
 
 def remove(o):
     assert isinstance(o, Updated)
@@ -88,6 +147,7 @@ def remove(o):
         _debug('canceling %s', o)
         _queue[o].cancel()
         del _queue[o]
+
 
 def remove_all():
     with _queue_lock:
