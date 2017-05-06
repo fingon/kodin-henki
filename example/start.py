@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat May  6 14:07:20 2017 mstenber
-# Edit time:     367 min
+# Last modified: Sat May  6 15:05:54 2017 mstenber
+# Edit time:     393 min
 #
 """
 
@@ -22,6 +22,8 @@ The other ones (poro-, fubuki-) run on computers to mainly provide the
 idle or non-idle state and potentially also manipulate their own state (such as screen blanking etc) based on what is going on.
 
 """
+
+from __future__ import print_function
 
 import datetime
 import logging
@@ -55,6 +57,12 @@ MSH = '.kh.hue_motion.HallwayM'
 MSK = '.kh.hue_motion.KitchenM'
 
 POWER_PROJECTOR = '.kh.mpower.mini_1'
+MPOWER_WHILE_PRESENT = [
+    # implicit .kh.mpower prefix
+    'pro_1',  # Genelec subwoofer
+    'pro_2',  # Genelec front left
+    'pro_5',  # Genelec front right
+]
 
 # lights to be controlled
 LB = '.kh.hue.Bed'
@@ -161,10 +169,20 @@ class HomeState:
     # What to do when entering this state
 
     def enter(self):
-        pass
-    # What to do when leaving this state
+        print('+ enter')
+        am_present = not isinstance(self, AwayState)
+        for p in MPOWER_WHILE_PRESENT:
+            o = _prdb_kh.MPower.get_named(p)
+            if o:
+                o.set('output', am_present)
+                print('setting', p, am_present)
+                # Ensure things that need power if I am around have it..
+            else:
+                print(p, 'sensor not yet available')
+        print('- enter')
 
     def leave(self):
+        # TBD: Should we do inverse power-down?
         pass
 
     def update_lights(self):
@@ -187,11 +205,8 @@ class HomeState:
         override = self.lights_conditional.get(light, None)
         return override and _changed_within(*override) or False
 
-
-class ProjectorState(HomeState):
-    " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
-    lights_conditional = {LC: (MSH, 30), LT: (MST, 900)}
-    sensor = POWER_PROJECTOR
+    def am_present(self):
+        return True
 
 
 class MobileState(HomeState):
@@ -218,12 +233,6 @@ class ToiletState(HomeState):
     lights_conditional = {LC: (MSH, 300), LK: (MSK, 300)}
 
 
-class AwayState(HomeState):
-    # Just operate the motion sensor triggered ones, if there is motion
-    # (if it gets triggered, our state should change soon-ish anyway)
-    lights_conditional = {LC: (MSH, 300), LT: (MST, 3600)}
-
-
 class ComputerState(HomeState):
     " Unidle at one of the computers. "
     within = 3600 * 3  # within 3 hours
@@ -231,13 +240,20 @@ class ComputerState(HomeState):
     lights_on = [LR, LK]
 
 
-class TimeoutState(HomeState):
-    " This state we enter if one of the others actually times out (Mobile/Computer-). In that case, all we do is just pause itunes if it's running, monitor has timed out long time ago most likely. "
+class AwayState(HomeState):
+    # Just operate the motion sensor triggered ones, if there is motion
+    # (if it gets triggered, our state should change soon-ish anyway)
+    lights_conditional = {LC: (MSH, 300), LT: (MST, 3600)}
 
-    def enter(self):
-        #_itunes_pause()
-        # n/a here, as this may run on cer
-        pass
+
+class ProjectorState(AwayState):
+    " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
+    lights_conditional = {LC: (MSH, 30), LT: (MST, 900)}
+    sensor = POWER_PROJECTOR
+
+
+class TimeoutState(AwayState):
+    " This state we enter if one of the others actually times out (Mobile/Computer-). In that case, all we do is just pause itunes if it's running, monitor has timed out long time ago most likely. "
 
 
 class NightState(ProjectorState):
@@ -354,7 +370,8 @@ class Home(prdb.Owner, _prdb_kh.LockedUpdated):
             if key == 'on':
                 hue_changed[0] = True
         db.object_changed.connect(_f)
-        hue.get_updater().update()
+        for o in _prdb_kh.HueUpdater.instances().as_list():
+            o.get_owner().update()
         db.object_changed.disconnect(_f)
         if hue_changed[0]:
             return

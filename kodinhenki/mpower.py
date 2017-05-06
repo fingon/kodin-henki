@@ -9,8 +9,8 @@
 # Copyright (c) 2017 Markus Stenberg
 #
 # Created:       Sat May  6 12:06:25 2017 mstenber
-# Last modified: Sat May  6 14:01:19 2017 mstenber
-# Edit time:     34 min
+# Last modified: Sat May  6 14:49:53 2017 mstenber
+# Edit time:     41 min
 #
 """MPower module.
 
@@ -60,7 +60,6 @@ def request(method, url, data=None):
         http_error_303 = http_error_302
         http_error_307 = http_error_302
 
-    print('xxx', method, url, data)
     opener = urllib2.build_opener(NoRedirectHandler())
     request = urllib2.Request('http://%s' % url, data=data)
     request.add_header('Cookie', 'AIROS_SESSIONID=%s' % SESSION_ID)
@@ -79,13 +78,13 @@ class MPowerUpdater(prdb.Owner, _updater.IntervalUpdated):
         if key != 'output':
             return
         self.request('PUT', 'sensors/%d' % b.port,
-                     'output=%d' % (1 if new else 0))
+                     'output=%d' % (1 if new else 0), expect_result=False)
         self.mark_dirty()
 
-    def request(self, method, url, expect_result=True):
+    def request(self, method, url, data=None, expect_result=True):
         full_url = '%s/%s' % (self.ip, url)
         for i in range(2):
-            s = request(method, full_url)
+            s = request(method, full_url, data)
             if s or not expect_result:
                 break
             elif i:
@@ -98,19 +97,21 @@ class MPowerUpdater(prdb.Owner, _updater.IntervalUpdated):
         r = self.request('GET', 'sensors')
         assert r
         r = r['sensors']
-        for o in r:
-            port = o['port']
-            power = o['power']
-            output = o['output']
-            output = True if output else False
-            need_power = self.on_threshold_by_port.get(
-                port, self.default_on_threshold)
-            is_on = True if power >= need_power else False
-            name = '%s_%d' % (self.name, port)
-            o = _prdb_kh.MPower.new_named(
-                name, on=is_on, output=output).get_owner()
-            o.port = port
-            o.updater = self
+        with _prdb_kh.lock:
+            for o in r:
+                port = o['port']
+                power = o['power']
+                output = o['output']
+                output = True if output else False
+                need_power = self.on_threshold_by_port.get(
+                    port, self.default_on_threshold)
+                is_on = True if power >= need_power else False
+                name = '%s_%d' % (self.name, port)
+                o = _prdb_kh.MPower.new_named(
+                    name, on=is_on, output=output).get_owner()
+                assert o, 'broken sensor %s' % name
+                o.port = port
+                o.updater = self
 
 _prdb_kh.MPowerUpdater.set_create_owner_instance_callback(MPowerUpdater)
 

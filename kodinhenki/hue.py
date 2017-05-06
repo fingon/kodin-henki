@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Sat May  6 12:52:48 2017 mstenber
-# Edit time:     251 min
+# Last modified: Sat May  6 14:41:43 2017 mstenber
+# Edit time:     253 min
 #
 """
 
@@ -41,7 +41,7 @@ _error = logging.error
 class HueBulb(prdb.Owner):
 
     def object_changed(self, **kwargs):
-        get_updater().bulb_changed(self, **kwargs)
+        self.updater.bulb_changed(self, **kwargs)
 
     # TBD: methods below seem unused nowadays. Get rid of them?
 
@@ -104,6 +104,7 @@ class HueUpdater(prdb.Owner, _updater.IntervalUpdated):
             with _prdb_kh.lock:
                 o = _prdb_kh.HueBulb.new_named(name, on=is_on).get_owner()
                 o.light_name = name
+                o.updater = self
 
         # Convert it to get_sensor_objects style output
         sensors = b.get_sensor()
