@@ -9,8 +9,8 @@
 # Copyright (c) 2017 Markus Stenberg
 #
 # Created:       Sat May  6 13:06:22 2017 mstenber
-# Last modified: Sat May  6 13:36:54 2017 mstenber
-# Edit time:     9 min
+# Last modified: Sat May  6 15:15:33 2017 mstenber
+# Edit time:     10 min
 #
 """
 
@@ -49,9 +49,8 @@ def test_mpower():
     assert _prdb_kh.MPower.get_named('x_4').output
     assert not _prdb_kh.MPower.get_named('x_6').output
 
-    with patch('kodinhenki.mpower.request') as req:
+    with patch('kodinhenki.mpower.request', return_value='') as req:
         p1 = _prdb_kh.MPower.get_named('x_1')
         p1.set('output', False)
         assert not p1.output
-        # assert req.called
-        # TBD: Debug someday why this does not seem to work properly..
+        assert req.called

@@ -9,8 +9,8 @@
 # Copyright (c) 2017 Markus Stenberg
 #
 # Created:       Sat May  6 12:06:25 2017 mstenber
-# Last modified: Sat May  6 14:49:53 2017 mstenber
-# Edit time:     41 min
+# Last modified: Sat May  6 15:14:31 2017 mstenber
+# Edit time:     42 min
 #
 """MPower module.
 
@@ -107,9 +107,9 @@ class MPowerUpdater(prdb.Owner, _updater.IntervalUpdated):
                     port, self.default_on_threshold)
                 is_on = True if power >= need_power else False
                 name = '%s_%d' % (self.name, port)
-                o = _prdb_kh.MPower.new_named(
-                    name, on=is_on, output=output).get_owner()
-                assert o, 'broken sensor %s' % name
+                s = _prdb_kh.MPower.new_named(name, on=is_on, output=output)
+                o = s.get_owner()
+                assert o, 'broken ,power %s' % name
                 o.port = port
                 o.updater = self
 
