@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Sat May  6 14:41:43 2017 mstenber
+# Last modified: Fri Jun 30 14:51:30 2017 mstenber
 # Edit time:     253 min
 #
 """
@@ -132,7 +132,10 @@ class HueUpdater(prdb.Owner, _updater.IntervalUpdated):
                     # b.light_name = name
             elif name.startswith('Hue temperature sensor'):
                 name = sensors[i + 1 - 1][1]['name']
-                value = '%.1f' % round(st['temperature'] / 100.0, 1)
+                temp = st['temperature']
+                if not temp:
+                    continue
+                value = '%.1f' % round(temp / 100.0, 1)
                 with _prdb_kh.lock:
                     _prdb_kh.HueTemperature.new_named(name, value=value)
             elif name.startswith('Hue ambient light sensor'):

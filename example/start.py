@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sat May  6 15:05:54 2017 mstenber
-# Edit time:     393 min
+# Last modified: Fri Jun 30 14:50:08 2017 mstenber
+# Edit time:     399 min
 #
 """
 
@@ -66,21 +66,26 @@ MPOWER_WHILE_PRESENT = [
 
 # lights to be controlled
 LB = '.kh.hue.Bed'
-LC = '.kh.hue.Entry'
-LK = '.kh.hue.Kitchen'
+LC1 = '.kh.hue.Hue phoenix down 1'
+LC2 = '.kh.hue.Hue phoenix down 2'
+LCL = [LC1, LC2]
+LK0 = '.kh.hue.Kitchen'
+LK1 = '.kh.hue.Hue beyond down 1'
+LK2 = '.kh.hue.Hue beyond up 1'
+LKL = [LK0, LK1, LK2]
 LR = '.kh.hue.Living'
 # WT='.kh.wemo_switch.switch2'
 LT = '.kh.hue.Toilet'
 TAP_OFF = '.kh.hue_tap.Tap.off'
 
 # Which light do we care about when it's daylight?
-DAYLIGHT_LIGHTS = [LT, LC]
+DAYLIGHT_LIGHTS = [LT]
 
 AWAY_GRACE_PERIOD = 300
 
 DARK_CHECK_INTERVAL = 3600
 
-DARK_THRESHOLD = 20  # in lux; 60w lightbulb =~ 100
+DARK_THRESHOLD = 50  # in lux; 60w lightbulb =~ 100
 
 _seen_on = {}
 
@@ -116,7 +121,7 @@ def is_daylight():
     global _dark_time
     daylight = suncalc.within_zenith()
     o = db.get_by_oid(LS)
-    if o and o.get('value', 100) <= DARK_THRESHOLD:
+    if o and o.get('value', DARK_THRESHOLD) <= DARK_THRESHOLD:
         _dark_time = time.time()
     if daylight and (time.time() - _dark_time) < DARK_CHECK_INTERVAL:
         daylight = False
@@ -124,7 +129,7 @@ def is_daylight():
 
 
 class HomeState:
-    lights = [LC, LK, LR, LB, LT]  # the lights we control
+    lights = LCL + LKL + [LR, LB, LT]  # the lights we control
     lights_on = None  # lights that are always on
     sensor = None  # sensor to monitor (see within next)
     within = None  # how recently it must have been active to apply
@@ -212,17 +217,21 @@ class HomeState:
 class MobileState(HomeState):
     " Most recently seen in corridor - could be even outside. "
     within = 3600 * 3  # within 3 hours
-    lights_on = [LR, LK]
+    lights_on = [LR] + LKL
     sensor = MSH
-    lights_conditional = {LC: (MSH, 300), LT: (MST, 900)}
+    lights_conditional = {LC1: (MSH, 300),
+                          LC2: (MSH, 300),
+                          LT: (MST, 900)}
 
 
 class KitchenState(HomeState):
     " Most recently seen in kitchen - could be even outside. "
     within = 3600 * 3  # within 3 hours
-    lights_on = [LR, LK]
+    lights_on = [LR] + LKL
     sensor = MSK
-    lights_conditional = {LC: (MSH, 300), LT: (MST, 300)}
+    lights_conditional = {LC1: (MSH, 300),
+                          LC2: (MSH, 300),
+                          LT: (MST, 300)}
 
 
 class ToiletState(HomeState):
@@ -230,25 +239,32 @@ class ToiletState(HomeState):
     within = 3600 * 2  # within 2 hours
     lights_on = [LT]
     sensor = MST
-    lights_conditional = {LC: (MSH, 300), LK: (MSK, 300)}
+    lights_conditional = {LC1: (MSH, 300),
+                          LC2: (MSH, 300),
+                          LK0: (MSK, 300),
+                          }
 
 
 class ComputerState(HomeState):
     " Unidle at one of the computers. "
     within = 3600 * 3  # within 3 hours
     sensor = IP
-    lights_on = [LR, LK]
+    lights_on = [LR, LK0]
 
 
 class AwayState(HomeState):
     # Just operate the motion sensor triggered ones, if there is motion
     # (if it gets triggered, our state should change soon-ish anyway)
-    lights_conditional = {LC: (MSH, 300), LT: (MST, 3600)}
+    lights_conditional = {LC1: (MSH, 300),
+                          LC2: (MSH, 300),
+                          LT: (MST, 3600)}
 
 
 class ProjectorState(AwayState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
-    lights_conditional = {LC: (MSH, 30), LT: (MST, 900)}
+    lights_conditional = {LC1: (MSH, 60),
+                          LC2: (MSH, 60),
+                          LT: (MST, 900)}
     sensor = POWER_PROJECTOR
 
 

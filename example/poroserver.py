@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Thu Apr 27 07:49:13 2017 mstenber
-# Edit time:     22 min
+# Last modified: Sun May  7 00:34:02 2017 mstenber
+# Edit time:     27 min
 #
 """
 
@@ -47,9 +47,11 @@ def _set_volume(n):
 
 
 def start():
-    process.start({  # 'xbmc': 'XBMC.app/Contents',
-        'kodi': 'Kodi.app/Contents',
-        'emacs': 'Emacs.app/Contents'})
+    process.start({
+        # 'xbmc': 'XBMC.app/Contents',
+        #    'kodi': 'Kodi.app/Contents',
+        #'emacs': 'Emacs.app/Contents',
+    })
     user_active.start('poro')
 
     def _f(o, key, old, new, **kwargs):
@@ -72,6 +74,7 @@ def start():
                 # Further away from computer -> more volume
                 # _set_volume(10) # separate audio setup now
                 _itunes_pause()
+                _monitor_off()  # on different machine
 
     kh.get_database().object_changed.connect(_f)
 
