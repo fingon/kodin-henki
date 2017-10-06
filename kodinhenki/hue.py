@@ -9,7 +9,7 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Fri Jun 30 14:51:30 2017 mstenber
+# Last modified: Fri Oct  6 08:45:31 2017 mstenber
 # Edit time:     253 min
 #
 """
@@ -32,6 +32,8 @@ import phue
 
 import prdb
 
+USE_HUE_TIMESTAMP = False
+
 BY_US = 'hue'
 
 _debug = logging.debug
@@ -53,6 +55,7 @@ class HueBulb(prdb.Owner):
 
     def turn_off(self):
         self.o.set('on', False)
+
 
 _prdb_kh.HueBulb.set_create_owner_instance_callback(HueBulb)
 
@@ -149,13 +152,16 @@ class HueUpdater(prdb.Owner, _updater.IntervalUpdated):
                 if event and lu:
                     key = tap_event2key[event]
                     fname = '%s.%s' % (name, key)
-                    # Parse the ISO8601 timestamp, assume UTC
-                    dt = datetime.datetime.strptime(
-                        lu, "%Y-%m-%dT%H:%M:%S")
+                    if USE_HUE_TIMESTAMP:
+                        # Parse the ISO8601 timestamp, assume UTC
+                        dt = datetime.datetime.strptime(
+                            lu, "%Y-%m-%dT%H:%M:%S")
                     with _prdb_kh.lock:
                         o = _prdb_kh.HueTap.new_named(fname)
-                        t = calendar.timegm(dt.timetuple())
+                        t = calendar.timegm(
+                            dt.timetuple()) if USE_HUE_TIMESTAMP else None
                         o.set('on', False, when=t)
+
 
 _prdb_kh.HueUpdater.set_create_owner_instance_callback(HueUpdater)
 
@@ -164,6 +170,7 @@ def get_updater(ip, **kwargs):
     o = _prdb_kh.HueUpdater.new_named(**kwargs).get_owner()
     o.ip = ip
     return o
+
 
 # backwards compatible API
 get = get_updater
