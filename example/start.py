@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Fri Jun 30 14:50:08 2017 mstenber
-# Edit time:     399 min
+# Last modified: Sun Jul  2 09:29:27 2017 mstenber
+# Edit time:     400 min
 #
 """
 
@@ -85,7 +85,7 @@ AWAY_GRACE_PERIOD = 300
 
 DARK_CHECK_INTERVAL = 3600
 
-DARK_THRESHOLD = 50  # in lux; 60w lightbulb =~ 100
+DARK_THRESHOLD = 20  # in lux; 60w lightbulb =~ 100
 
 _seen_on = {}
 
@@ -121,7 +121,7 @@ def is_daylight():
     global _dark_time
     daylight = suncalc.within_zenith()
     o = db.get_by_oid(LS)
-    if o and o.get('value', DARK_THRESHOLD) <= DARK_THRESHOLD:
+    if o and o.get('value', DARK_THRESHOLD + 1) <= DARK_THRESHOLD:
         _dark_time = time.time()
     if daylight and (time.time() - _dark_time) < DARK_CHECK_INTERVAL:
         daylight = False
