@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Sun Jul  2 09:29:27 2017 mstenber
-# Edit time:     400 min
+# Last modified: Fri Nov 17 12:23:54 2017 mstenber
+# Edit time:     408 min
 #
 """
 
@@ -68,11 +68,13 @@ MPOWER_WHILE_PRESENT = [
 LB = '.kh.hue.Bed'
 LC1 = '.kh.hue.Hue phoenix down 1'
 LC2 = '.kh.hue.Hue phoenix down 2'
-LCL = [LC1, LC2]
+LC3 = '.kh.hue.Hue phoenix up 1'
+LCL = [LC1, LC2, LC3]
 LK0 = '.kh.hue.Kitchen'
 LK1 = '.kh.hue.Hue beyond down 1'
 LK2 = '.kh.hue.Hue beyond up 1'
-LKL = [LK0, LK1, LK2]
+LK3 = '.kh.hue.Spot2'
+LKL = [LK0, LK1, LK2, LK3]
 LR = '.kh.hue.Living'
 # WT='.kh.wemo_switch.switch2'
 LT = '.kh.hue.Toilet'
@@ -83,7 +85,7 @@ DAYLIGHT_LIGHTS = [LT]
 
 AWAY_GRACE_PERIOD = 300
 
-DARK_CHECK_INTERVAL = 3600
+DARK_CHECK_INTERVAL = 600
 
 DARK_THRESHOLD = 20  # in lux; 60w lightbulb =~ 100
 
@@ -113,6 +115,7 @@ def _changed_within(e, x):
     if c is None or c is True:
         return c
     return time.time() - x < c
+
 
 _dark_time = 0
 
@@ -217,11 +220,9 @@ class HomeState:
 class MobileState(HomeState):
     " Most recently seen in corridor - could be even outside. "
     within = 3600 * 3  # within 3 hours
-    lights_on = [LR] + LKL
+    lights_on = LCL + LKL
     sensor = MSH
-    lights_conditional = {LC1: (MSH, 300),
-                          LC2: (MSH, 300),
-                          LT: (MST, 900)}
+    lights_conditional = {LT: (MST, 900)}
 
 
 class KitchenState(HomeState):
@@ -237,11 +238,10 @@ class KitchenState(HomeState):
 class ToiletState(HomeState):
     " Most recently activity in toilet, probably not outside. "
     within = 3600 * 2  # within 2 hours
-    lights_on = [LT]
+    lights_on = [LT] + LKL
     sensor = MST
     lights_conditional = {LC1: (MSH, 300),
                           LC2: (MSH, 300),
-                          LK0: (MSK, 300),
                           }
 
 
@@ -263,7 +263,6 @@ class AwayState(HomeState):
 class ProjectorState(AwayState):
     " The projector is up -> mostly dark, +- motion triggered corridor + toilet lights. "
     lights_conditional = {LC1: (MSH, 60),
-                          LC2: (MSH, 60),
                           LT: (MST, 900)}
     sensor = POWER_PROJECTOR
 
@@ -407,6 +406,7 @@ def _object_added(**kwargs):
 def _object_changed(o, key, old, new, **kwargs):
     _debug('object_change: %s/%s: %s=>%s %s', o.id, key, old, new, kwargs)
     h.some_object_changed()
+
 
 if __name__ == '__main__':
     p = khserver.create_shared_argparser('start')
