@@ -9,8 +9,8 @@
 # Copyright (c) 2014 Markus Stenberg
 #
 # Created:       Mon Sep 22 15:59:59 2014 mstenber
-# Last modified: Fri Oct  6 08:45:31 2017 mstenber
-# Edit time:     253 min
+# Last modified: Sun Oct  8 00:34:51 2017 mstenber
+# Edit time:     256 min
 #
 """
 
@@ -152,14 +152,16 @@ class HueUpdater(prdb.Owner, _updater.IntervalUpdated):
                 if event and lu:
                     key = tap_event2key[event]
                     fname = '%s.%s' % (name, key)
-                    if USE_HUE_TIMESTAMP:
-                        # Parse the ISO8601 timestamp, assume UTC
-                        dt = datetime.datetime.strptime(
-                            lu, "%Y-%m-%dT%H:%M:%S")
                     with _prdb_kh.lock:
                         o = _prdb_kh.HueTap.new_named(fname)
-                        t = calendar.timegm(
-                            dt.timetuple()) if USE_HUE_TIMESTAMP else None
+                        if USE_HUE_TIMESTAMP:
+                            # Parse the ISO8601 timestamp, assume UTC
+                            dt = datetime.datetime.strptime(
+                                lu, "%Y-%m-%dT%H:%M:%S")
+                            t = calendar.timegm(dt.timetuple())
+                        else:
+                            o.set('lastupdated', lu)
+                            t = o.get_changed('lastupdated')
                         o.set('on', False, when=t)
 
 
