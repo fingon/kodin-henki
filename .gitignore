@@ -52,3 +52,12 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# pytest-cov
+*,cover
+.coverage.*
+
+# Pytest
+.pytest_cache
+
+*~
