@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       .. sometime ~spring 2014 ..
-# Last modified: Fri Nov 17 12:23:54 2017 mstenber
-# Edit time:     408 min
+# Last modified: Fri May 11 17:20:23 2018 mstenber
+# Edit time:     414 min
 #
 """
 
@@ -55,7 +55,7 @@ PHONES = ['.kh.wifi.iphone']
 MST = '.kh.hue_motion.BathroomM'
 MSH = '.kh.hue_motion.HallwayM'
 MSK = '.kh.hue_motion.KitchenM'
-
+MSB = '.kh.hue_motion.BedroomM'
 POWER_PROJECTOR = '.kh.mpower.mini_1'
 MPOWER_WHILE_PRESENT = [
     # implicit .kh.mpower prefix
@@ -136,7 +136,11 @@ class HomeState:
     lights_on = None  # lights that are always on
     sensor = None  # sensor to monitor (see within next)
     within = None  # how recently it must have been active to apply
-    lights_conditional = {}  # light => (sensor, timeout) mapping
+    lights_conditional = {LC1: (MSH, 300),
+                          LC2: (MSH, 300),
+                          LT: (MST, 300),
+                          LR: (MSB, 300),
+                          }
 
     def next_update_in_seconds(self):
         nt = None
@@ -222,7 +226,6 @@ class MobileState(HomeState):
     within = 3600 * 3  # within 3 hours
     lights_on = LCL + LKL
     sensor = MSH
-    lights_conditional = {LT: (MST, 900)}
 
 
 class KitchenState(HomeState):
@@ -230,9 +233,6 @@ class KitchenState(HomeState):
     within = 3600 * 3  # within 3 hours
     lights_on = [LR] + LKL
     sensor = MSK
-    lights_conditional = {LC1: (MSH, 300),
-                          LC2: (MSH, 300),
-                          LT: (MST, 300)}
 
 
 class ToiletState(HomeState):
@@ -240,24 +240,20 @@ class ToiletState(HomeState):
     within = 3600 * 2  # within 2 hours
     lights_on = [LT] + LKL
     sensor = MST
-    lights_conditional = {LC1: (MSH, 300),
-                          LC2: (MSH, 300),
-                          }
 
 
 class ComputerState(HomeState):
     " Unidle at one of the computers. "
     within = 3600 * 3  # within 3 hours
-    sensor = IP
+    # sensor = IP # if using Mac's own software
+    sensor = MSB  # Hue
     lights_on = [LR, LK0]
 
 
 class AwayState(HomeState):
     # Just operate the motion sensor triggered ones, if there is motion
     # (if it gets triggered, our state should change soon-ish anyway)
-    lights_conditional = {LC1: (MSH, 300),
-                          LC2: (MSH, 300),
-                          LT: (MST, 3600)}
+    pass
 
 
 class ProjectorState(AwayState):

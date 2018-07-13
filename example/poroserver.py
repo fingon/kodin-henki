@@ -7,8 +7,8 @@
 # Author: Markus Stenberg <fingon@iki.fi>
 #
 # Created:       Sun Jun  1 22:44:30 2014 mstenber
-# Last modified: Sun May  7 00:34:02 2017 mstenber
-# Edit time:     27 min
+# Last modified: Fri Jul 13 08:47:59 2018 mstenber
+# Edit time:     30 min
 #
 """
 
@@ -19,13 +19,12 @@ idle on the computer + what's going on with the projector software.
 
 import os
 
+import khserver
 import kodinhenki as kh
 import kodinhenki.prdb_kh as _prdb_kh
 import kodinhenki.process as process
 import kodinhenki.sync as sync
 import kodinhenki.user_active as user_active
-
-import khserver
 
 
 def _lock_screen():
@@ -42,6 +41,10 @@ def _itunes_pause():
     os.system('osascript "/Users/mstenber/Library/Scripts/itunes pause.scpt"')
 
 
+def _itunes_play():
+    os.system('osascript "/Users/mstenber/Library/Scripts/itunes play.scpt"')
+
+
 def _set_volume(n):
     os.system('osascript -e "set Volume %d"' % n)
 
@@ -50,7 +53,7 @@ def start():
     process.start({
         # 'xbmc': 'XBMC.app/Contents',
         #    'kodi': 'Kodi.app/Contents',
-        #'emacs': 'Emacs.app/Contents',
+        # 'emacs': 'Emacs.app/Contents',
     })
     user_active.start('poro')
 
@@ -59,12 +62,14 @@ def start():
             if old == 'ProjectorState':
                 # _set_volume(3) # separate audio setup now
                 pass
+            if old == 'AwayState':
+                _itunes_play()
             # TimeoutState is bit questionable..
             # it is the 'default' if e.g. poro is not connected,
             # so do nothing there for now.
             if new == 'NightState':
                 _monitor_off()
-                #_itunes_pause()
+                # _itunes_pause()
                 # Hmm. Good idea? Maybe not, if listening to stuff on bed.
             elif new == 'AwayState':
                 _monitor_off()
@@ -77,6 +82,7 @@ def start():
                 _monitor_off()  # on different machine
 
     kh.get_database().object_changed.connect(_f)
+
 
 if __name__ == '__main__':
     p = khserver.create_shared_argparser('poroserver')
